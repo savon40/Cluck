@@ -10,7 +10,7 @@ export interface Habit {
 export interface Routine {
   habits: Habit[];
   targetTime: string; // e.g. "6:00 AM"
-  blockedApps: string[];
+  notificationAggressiveness: 'low' | 'medium' | 'high';
   isActive: boolean;
   selectedAudioId?: string;
 }
@@ -41,7 +41,6 @@ export interface AudioClip {
 
 export interface Settings {
   alarmVolume: number;
-  notificationAggressiveness: 'low' | 'medium' | 'high';
   selectedMorningAudio: string | null;
   selectedNightAudio: string | null;
   hasCompletedOnboarding: boolean;

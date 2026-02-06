@@ -84,13 +84,6 @@ export default function WelcomeScreen() {
             </Text>
             <Ionicons name="arrow-forward" size={20} color="white" style={{ marginLeft: 8 }} />
           </Pressable>
-
-          <Pressable>
-            <Text className="text-muted-foreground text-sm">
-              Already a member?{' '}
-              <Text className="text-foreground font-bold underline">Login</Text>
-            </Text>
-          </Pressable>
         </View>
       </View>
     </SafeAreaView>

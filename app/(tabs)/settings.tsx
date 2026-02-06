@@ -1,48 +1,11 @@
-import { View, Text, Pressable, ScrollView, Switch } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Colors } from '@/constants/theme';
-import { getSettings } from '@/stores/storage';
-
-function SettingsRow({
-  icon,
-  iconColor,
-  iconBg,
-  title,
-  subtitle,
-  right,
-  onPress,
-}: {
-  icon: string;
-  iconColor?: string;
-  iconBg?: string;
-  title: string;
-  subtitle?: string;
-  right?: React.ReactNode;
-  onPress?: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-row items-center bg-card rounded-2xl p-4 mb-3 border border-border active:scale-[0.98]"
-    >
-      <View
-        className="w-10 h-10 rounded-xl items-center justify-center mr-3"
-        style={{ backgroundColor: iconBg ?? 'rgba(255, 102, 0, 0.1)' }}
-      >
-        <Ionicons name={icon as any} size={20} color={iconColor ?? Colors.primary} />
-      </View>
-      <View className="flex-1">
-        <Text className="text-base font-semibold text-foreground">{title}</Text>
-        {subtitle && (
-          <Text className="text-xs text-muted-foreground mt-0.5">{subtitle}</Text>
-        )}
-      </View>
-      {right ?? <Ionicons name="chevron-forward" size={20} color={Colors.mutedForeground} />}
-    </Pressable>
-  );
-}
+import { getSettings, saveSettings } from '@/stores/storage';
+import { useRoutineStore } from '@/stores/useRoutineStore';
+import type { Settings } from '@/types';
 
 function SectionHeader({ title }: { title: string }) {
   return (
@@ -56,142 +19,146 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 export default function SettingsScreen() {
-  const settings = getSettings();
-  const [notifications, setNotifications] = useState(true);
+  const [settings, setSettings] = useState(getSettings);
+  const { resetDailyHabits, loadData } = useRoutineStore();
+
+  const update = useCallback((patch: Partial<Settings>) => {
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    saveSettings(next);
+  }, [settings]);
+
+  const handleResetOnboarding = () => {
+    Alert.alert(
+      'Reset Onboarding',
+      'This will show the welcome screen on next launch.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => update({ hasCompletedOnboarding: false }),
+        },
+      ],
+    );
+  };
+
+  const handleClearProgress = () => {
+    Alert.alert(
+      'Clear Today\'s Progress',
+      'This will uncheck all habits for both morning and night routines.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: () => {
+            resetDailyHabits('morning');
+            resetDailyHabits('night');
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className="flex-row items-center justify-center px-6 py-4 border-b border-border">
+        <View className="items-center px-6 py-4 border-b border-border">
           <Text className="text-lg font-bold text-foreground" style={{ letterSpacing: -0.5 }}>
             Settings
           </Text>
         </View>
 
-        {/* Profile Card */}
-        <View className="px-6 mt-4 mb-6">
-          <View
-            className="bg-card rounded-3xl p-5 border border-border overflow-hidden"
-            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
-          >
-            <View className="flex-row items-center gap-4">
-              <View
-                className="w-14 h-14 rounded-full items-center justify-center"
-                style={{ backgroundColor: 'rgba(255, 102, 0, 0.1)' }}
-              >
-                <Ionicons name="person" size={24} color={Colors.primary} />
+        {/* Alarm Volume */}
+        <View className="px-6 mt-6 mb-6">
+          <SectionHeader title="Sound" />
+          <View className="bg-card rounded-2xl p-4 border border-border">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-3">
+                <View
+                  className="w-10 h-10 rounded-xl items-center justify-center"
+                  style={{ backgroundColor: 'rgba(234, 179, 8, 0.1)' }}
+                >
+                  <Ionicons name="volume-high" size={20} color="#EAB308" />
+                </View>
+                <Text className="text-base font-semibold text-foreground">Alarm Volume</Text>
               </View>
-              <View className="flex-1">
-                <Text className="text-lg font-bold text-foreground">Free Plan</Text>
-                <Text className="text-xs text-muted-foreground mt-0.5">3 habits per routine</Text>
+              <View className="flex-row items-center" style={{ gap: 12 }}>
+                <Pressable
+                  onPress={() => update({ alarmVolume: Math.max(0, Math.round((settings.alarmVolume - 0.1) * 10) / 10) })}
+                  className="w-8 h-8 rounded-full items-center justify-center"
+                  style={{ backgroundColor: Colors.secondary }}
+                >
+                  <Ionicons name="remove" size={18} color={Colors.foreground} />
+                </Pressable>
+                <Text className="text-sm font-bold" style={{ color: Colors.primary, width: 36, textAlign: 'center' }}>
+                  {Math.round(settings.alarmVolume * 100)}%
+                </Text>
+                <Pressable
+                  onPress={() => update({ alarmVolume: Math.min(1, Math.round((settings.alarmVolume + 0.1) * 10) / 10) })}
+                  className="w-8 h-8 rounded-full items-center justify-center"
+                  style={{ backgroundColor: Colors.secondary }}
+                >
+                  <Ionicons name="add" size={18} color={Colors.foreground} />
+                </Pressable>
               </View>
-              <Pressable
-                className="px-4 py-2 bg-primary rounded-full"
-                style={{ shadowColor: Colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-              >
-                <Text className="text-primary-foreground text-xs font-bold">Upgrade</Text>
-              </Pressable>
             </View>
           </View>
         </View>
 
-        {/* Notifications */}
-        <View className="px-6 mb-6">
-          <SectionHeader title="Notifications" />
-          <SettingsRow
-            icon="notifications"
-            iconColor="#3B82F6"
-            iconBg="rgba(59, 130, 246, 0.1)"
-            title="Push Notifications"
-            subtitle="Reminders and blocking alerts"
-            right={
-              <Switch
-                value={notifications}
-                onValueChange={setNotifications}
-                trackColor={{ false: Colors.secondary, true: Colors.primary }}
-                thumbColor="#FFFFFF"
-              />
-            }
-          />
-          <SettingsRow
-            icon="warning"
-            iconColor="#F97316"
-            iconBg="rgba(249, 115, 22, 0.1)"
-            title="Notification Aggressiveness"
-            subtitle={`Currently: ${settings.notificationAggressiveness}`}
-          />
-        </View>
-
-        {/* Routines */}
-        <View className="px-6 mb-6">
-          <SectionHeader title="Routines" />
-          <SettingsRow
-            icon="alarm"
-            iconColor="#EAB308"
-            iconBg="rgba(234, 179, 8, 0.1)"
-            title="Morning Alarm"
-            subtitle="6:00 AM with motivational audio"
-          />
-          <SettingsRow
-            icon="moon"
-            iconColor="#8B5CF6"
-            iconBg="rgba(139, 92, 246, 0.1)"
-            title="Night Reminder"
-            subtitle="9:30 PM wind-down trigger"
-          />
-          <SettingsRow
-            icon="musical-notes"
-            iconColor="#EC4899"
-            iconBg="rgba(236, 72, 153, 0.1)"
-            title="Audio Library"
-            subtitle="5 clips available"
-          />
-        </View>
-
-        {/* Blocking */}
-        <View className="px-6 mb-6">
-          <SectionHeader title="App Blocking" />
-          <SettingsRow
-            icon="lock-closed"
-            iconColor="#EF4444"
-            iconBg="rgba(239, 68, 68, 0.1)"
-            title="Blocked Apps"
-            subtitle="4 apps in jail"
-          />
-          <SettingsRow
-            icon="timer"
-            iconColor="#F97316"
-            iconBg="rgba(249, 115, 22, 0.1)"
-            title="Notification Interval"
-            subtitle="Every 2 minutes when in blocked app"
-          />
-        </View>
-
-        {/* Account */}
+        {/* Debug / Testing */}
         <View className="px-6 mb-8">
-          <SectionHeader title="Account" />
-          <SettingsRow
-            icon="star"
-            iconColor="#EAB308"
-            iconBg="rgba(234, 179, 8, 0.1)"
-            title="Upgrade to Premium"
-            subtitle="Unlimited habits, full audio library"
-          />
-          <SettingsRow
-            icon="cloud-upload"
-            iconColor="#10B981"
-            iconBg="rgba(16, 185, 129, 0.1)"
-            title="Backup Data"
-            subtitle="Sync across devices"
-          />
-          <SettingsRow
-            icon="information-circle"
-            iconColor={Colors.mutedForeground}
-            iconBg={Colors.secondary}
-            title="About Locked In"
-            subtitle="Version 1.0.0"
-          />
+          <SectionHeader title="Testing" />
+
+          <Pressable
+            onPress={handleClearProgress}
+            className="flex-row items-center bg-card rounded-2xl p-4 mb-3 border border-border active:scale-[0.98]"
+          >
+            <View
+              className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+              style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
+            >
+              <Ionicons name="refresh" size={20} color="#EF4444" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-foreground">Clear Today's Progress</Text>
+              <Text className="text-xs text-muted-foreground mt-0.5">Uncheck all habits for today</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.mutedForeground} />
+          </Pressable>
+
+          <Pressable
+            onPress={handleResetOnboarding}
+            className="flex-row items-center bg-card rounded-2xl p-4 mb-3 border border-border active:scale-[0.98]"
+          >
+            <View
+              className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+              style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+            >
+              <Ionicons name="arrow-back-circle" size={20} color="#8B5CF6" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-foreground">Reset Onboarding</Text>
+              <Text className="text-xs text-muted-foreground mt-0.5">Show welcome screen again</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.mutedForeground} />
+          </Pressable>
+
+          {/* About */}
+          <View className="flex-row items-center bg-card rounded-2xl p-4 border border-border">
+            <View
+              className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+              style={{ backgroundColor: Colors.secondary }}
+            >
+              <Ionicons name="information-circle" size={20} color={Colors.mutedForeground} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-foreground">Locked In</Text>
+              <Text className="text-xs text-muted-foreground mt-0.5">Version 1.0.0</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -3,74 +3,47 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useMemo } from 'react';
 import { useRoutineStore } from '@/stores/useRoutineStore';
+import { getTodayCompletion } from '@/stores/storage';
 import { Colors } from '@/constants/theme';
 import { ProgressRing } from '@/components/ProgressRing';
 import { getHabitStyle } from '@/components/HabitLibrary';
+import { parseTargetTime, getActiveRoutineType } from '@/utils/routineHelpers';
 import type { Habit, RoutineType } from '@/types';
 
 // --- Helpers ---
 
-function parseTargetTime(timeStr: string): { hours24: number; minutes: number } {
-  const [time, period] = timeStr.split(' ');
-  const [h, m] = time.split(':').map(Number);
-  let hours24 = h;
-  if (period === 'PM' && h !== 12) hours24 += 12;
-  if (period === 'AM' && h === 12) hours24 = 0;
-  return { hours24, minutes: m };
-}
+function getRoutineStatus(
+  targetTime: string,
+  isComplete: boolean,
+): { text: string; color: string } {
+  if (isComplete) {
+    return { text: 'Complete', color: Colors.success };
+  }
 
-function getActiveRoutineType(morningTime: string, nightTime: string): RoutineType {
-  const now = new Date();
-  const current = now.getHours() * 60 + now.getMinutes();
-
-  const morning = parseTargetTime(morningTime);
-  const night = parseTargetTime(nightTime);
-  const morningMins = morning.hours24 * 60 + morning.minutes;
-  const nightMins = night.hours24 * 60 + night.minutes;
-
-  // Show whichever routine is nearest (forward or backward on the 24h clock)
-  const distToMorning = Math.min(
-    ((morningMins - current) + 1440) % 1440,
-    ((current - morningMins) + 1440) % 1440,
-  );
-  const distToNight = Math.min(
-    ((nightMins - current) + 1440) % 1440,
-    ((current - nightMins) + 1440) % 1440,
-  );
-
-  return distToMorning <= distToNight ? 'morning' : 'night';
-}
-
-function getCountdownText(targetTime: string): string {
   const now = new Date();
   const { hours24, minutes } = parseTargetTime(targetTime);
 
   const target = new Date();
   target.setHours(hours24, minutes, 0, 0);
 
-  // If target is in the past today, it's for tomorrow
-  if (target.getTime() <= now.getTime()) {
-    target.setDate(target.getDate() + 1);
+  const diffMs = target.getTime() - now.getTime();
+
+  if (diffMs <= 0) {
+    // Target time has passed today → overdue
+    const overdueMins = Math.floor(-diffMs / 60000);
+    const h = Math.floor(overdueMins / 60);
+    const m = overdueMins % 60;
+    const timeStr = h === 0 ? `${m}m` : `${h}h ${m}m`;
+    return { text: `Overdue by ${timeStr}`, color: '#D94040' };
   }
 
-  const diffMs = target.getTime() - now.getTime();
+  // Target time is in the future
   const diffMins = Math.floor(diffMs / 60000);
   const h = Math.floor(diffMins / 60);
   const m = diffMins % 60;
-
-  if (h === 0) return `${m}m`;
-  return `${h}h ${m}m`;
+  const timeStr = h === 0 ? `${m}m` : `${h}h ${m}m`;
+  return { text: `Starts in ${timeStr}`, color: Colors.primary };
 }
-
-// --- Blocked apps (matching routines page) ---
-
-const BLOCKED_APPS = [
-  { name: 'Instagram', icon: 'logo-instagram' },
-  { name: 'TikTok', icon: 'videocam' },
-  { name: 'X', icon: 'logo-twitter' },
-  { name: 'Reddit', icon: 'logo-reddit' },
-  { name: 'Facebook', icon: 'logo-facebook' },
-];
 
 // --- Components ---
 
@@ -162,28 +135,6 @@ function HabitItem({
   );
 }
 
-function BlockedAppIcon({ icon, name }: { icon: string; name: string }) {
-  return (
-    <View className="items-center" style={{ width: 64 }}>
-      <View
-        className="w-14 h-14 rounded-2xl bg-background border items-center justify-center mb-1"
-        style={{ borderColor: 'rgba(239, 68, 68, 0.15)' }}
-      >
-        <Ionicons name={icon as any} size={24} color={Colors.mutedForeground} />
-        <View
-          className="absolute inset-0 rounded-2xl items-center justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
-        >
-          <Ionicons name="lock-closed" size={14} color={Colors.error} />
-        </View>
-      </View>
-      <Text className="text-xs text-muted-foreground text-center" numberOfLines={1}>
-        {name}
-      </Text>
-    </View>
-  );
-}
-
 // --- Main screen ---
 
 export default function DashboardScreen() {
@@ -203,10 +154,18 @@ export default function DashboardScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-detect which routine based on current time
+  // Get today's completion state from storage (re-evaluated on streakData changes)
+  const todayCompletion = useMemo(() => getTodayCompletion(), [streakData]);
+
+  // Auto-detect which routine based on current time + completion
   const routineType = useMemo(
-    () => getActiveRoutineType(morningRoutine.targetTime, nightRoutine.targetTime),
-    [morningRoutine.targetTime, nightRoutine.targetTime, now]
+    () => getActiveRoutineType(
+      morningRoutine.targetTime,
+      nightRoutine.targetTime,
+      todayCompletion.morning,
+      todayCompletion.night,
+    ),
+    [morningRoutine.targetTime, nightRoutine.targetTime, todayCompletion, now]
   );
 
   const routine = routineType === 'morning' ? morningRoutine : nightRoutine;
@@ -216,14 +175,22 @@ export default function DashboardScreen() {
   const isComplete = completedCount === totalCount && totalCount > 0;
   const currentTaskIndex = routine.habits.findIndex((h) => !h.completed);
 
-  const countdown = useMemo(
-    () => getCountdownText(routine.targetTime),
-    [routine.targetTime, now]
+  // Smart status: overdue / starts in / complete
+  const routineStatus = useMemo(
+    () => getRoutineStatus(routine.targetTime, isComplete),
+    [routine.targetTime, isComplete, now]
   );
 
-  // Estimated time remaining (5 min per task)
-  const remainingTasks = totalCount - completedCount;
-  const estimatedMinutes = remainingTasks * 5;
+  // Check if the OTHER routine is complete today
+  const otherRoutineComplete = routineType === 'morning'
+    ? todayCompletion.night
+    : todayCompletion.morning;
+  const otherRoutineLabel = routineType === 'morning' ? 'Night' : 'Morning';
+
+  // Estimated time remaining based on habit durations
+  const estimatedMinutes = routine.habits
+    .filter((h) => !h.completed)
+    .reduce((sum, h) => sum + (h.duration ?? 10), 0);
   const timeDisplay = isComplete
     ? '00:00'
     : `${String(Math.floor(estimatedMinutes / 60)).padStart(2, '0')}:${String(estimatedMinutes % 60).padStart(2, '0')}`;
@@ -239,9 +206,14 @@ export default function DashboardScreen() {
         className="flex-row items-center justify-between px-6 py-4 border-b border-border"
         style={{ backgroundColor: 'rgba(255, 247, 240, 0.8)' }}
       >
-        <Text className="text-sm font-medium text-muted-foreground" style={{ fontVariant: ['tabular-nums'] }}>
-          {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
+        <View>
+          <Text className="text-sm font-medium text-muted-foreground" style={{ fontVariant: ['tabular-nums'] }}>
+            {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+          <Text className="text-xs text-muted-foreground" style={{ opacity: 0.7 }}>
+            {now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          </Text>
+        </View>
         <View
           className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
           style={{ backgroundColor: 'rgba(255, 102, 0, 0.1)', borderWidth: 1, borderColor: 'rgba(255, 102, 0, 0.2)' }}
@@ -255,15 +227,31 @@ export default function DashboardScreen() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Routine Type + Countdown + Toggle */}
+        {/* Completion banner for the other routine */}
+        {otherRoutineComplete && (
+          <View className="mx-6 mt-4 mb-1 flex-row items-center self-start px-3 py-1.5 rounded-full"
+            style={{ backgroundColor: 'rgba(52, 199, 89, 0.1)', borderWidth: 1, borderColor: 'rgba(52, 199, 89, 0.2)' }}
+          >
+            <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
+            <Text className="text-xs font-semibold ml-1.5" style={{ color: Colors.success }}>
+              {otherRoutineLabel} Complete
+            </Text>
+          </View>
+        )}
+
         <View className="flex-row items-center justify-between px-6 pt-5 pb-2">
           <View>
             <Text className="text-xs font-bold text-muted-foreground uppercase" style={{ letterSpacing: 2 }}>
               {routineType === 'morning' ? 'Morning Routine' : 'Night Routine'}
             </Text>
             <View className="flex-row items-center gap-1.5 mt-1">
-              <Ionicons name="time-outline" size={14} color={Colors.mutedForeground} />
-              <Text className="text-xs text-muted-foreground">
-                Starts in <Text className="font-semibold" style={{ color: Colors.primary }}>{countdown}</Text>
+              <Ionicons
+                name={routineStatus.color === Colors.success ? 'checkmark-circle' : 'time-outline'}
+                size={14}
+                color={routineStatus.color}
+              />
+              <Text className="text-xs font-semibold" style={{ color: routineStatus.color }}>
+                {routineStatus.text}
               </Text>
             </View>
           </View>
@@ -345,31 +333,6 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Blocked Apps Zone */}
-        {!isComplete && routine.isActive && (
-          <View
-            className="mx-6 mb-8 p-5 rounded-3xl"
-            style={{
-              backgroundColor: Colors.blockedBg,
-              borderWidth: 1,
-              borderColor: Colors.blockedBorder,
-            }}
-          >
-            <View className="flex-row items-center gap-2 mb-4">
-              <Ionicons name="lock-closed" size={14} color={Colors.blockedText} />
-              <Text className="text-xs font-bold uppercase" style={{ color: Colors.blockedText, letterSpacing: 2 }}>
-                Blocked Until Completion
-              </Text>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View className="flex-row" style={{ gap: 12 }}>
-                {BLOCKED_APPS.map((app) => (
-                  <BlockedAppIcon key={app.name} icon={app.icon} name={app.name} />
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );

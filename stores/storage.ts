@@ -26,32 +26,23 @@ function setJSON<T>(key: string, value: T): void {
 // Default data
 const DEFAULT_MORNING_ROUTINE: Routine = {
   habits: [
-    { id: '1', name: 'Gratitude Journal', completed: false },
-    { id: '2', name: 'Exercise', completed: false },
-    { id: '3', name: 'Read 10 Pages', completed: false },
+    { id: '1', name: 'Gratitude Journal', completed: false, duration: 10 },
+    { id: '2', name: 'Exercise', completed: false, duration: 30 },
+    { id: '3', name: 'Read 10 Pages', completed: false, duration: 20 },
   ],
   targetTime: '6:00 AM',
-  blockedApps: [
-    'com.instagram.android',
-    'com.zhiliaoapp.musically', // TikTok
-    'com.twitter.android',
-    'com.reddit.frontpage',
-  ],
+  notificationAggressiveness: 'medium',
   isActive: true,
 };
 
 const DEFAULT_NIGHT_ROUTINE: Routine = {
   habits: [
-    { id: '1', name: 'Read', completed: false },
-    { id: '2', name: 'Pray', completed: false },
-    { id: '3', name: 'Journal', completed: false },
+    { id: '1', name: 'Read', completed: false, duration: 20 },
+    { id: '2', name: 'Pray', completed: false, duration: 10 },
+    { id: '3', name: 'Journal', completed: false, duration: 10 },
   ],
   targetTime: '9:30 PM',
-  blockedApps: [
-    'com.instagram.android',
-    'com.zhiliaoapp.musically',
-    'com.twitter.android',
-  ],
+  notificationAggressiveness: 'medium',
   isActive: true,
 };
 
@@ -63,7 +54,6 @@ const DEFAULT_STREAK_DATA: StreakData = {
 
 const DEFAULT_SETTINGS: Settings = {
   alarmVolume: 0.8,
-  notificationAggressiveness: 'medium',
   selectedMorningAudio: null,
   selectedNightAudio: null,
   hasCompletedOnboarding: false,

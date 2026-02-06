@@ -8,18 +8,26 @@ export interface PredefinedHabit {
   icon: string;
   color: string;
   bg: string;
+  defaultDuration: number;
 }
 
 export const PREDEFINED_HABITS: PredefinedHabit[] = [
-  { name: 'Drink Water', icon: 'water', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)' },
-  { name: 'Exercise', icon: 'barbell', color: '#F97316', bg: 'rgba(249, 115, 22, 0.1)' },
-  { name: 'Meditate', icon: 'leaf', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.1)' },
-  { name: 'Read', icon: 'book', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
-  { name: 'Gratitude', icon: 'heart', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.1)' },
-  { name: 'Journal', icon: 'pencil', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' },
-  { name: 'Pray', icon: 'hand-left', color: '#6366F1', bg: 'rgba(99, 102, 241, 0.1)' },
-  { name: 'Stretch', icon: 'body', color: '#14B8A6', bg: 'rgba(20, 184, 166, 0.1)' },
+  { name: 'Drink Water', icon: 'water', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)', defaultDuration: 5 },
+  { name: 'Exercise', icon: 'barbell', color: '#F97316', bg: 'rgba(249, 115, 22, 0.1)', defaultDuration: 30 },
+  { name: 'Meditate', icon: 'leaf', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.1)', defaultDuration: 15 },
+  { name: 'Read', icon: 'book', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)', defaultDuration: 20 },
+  { name: 'Gratitude', icon: 'heart', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.1)', defaultDuration: 10 },
+  { name: 'Journal', icon: 'pencil', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)', defaultDuration: 10 },
+  { name: 'Pray', icon: 'hand-left', color: '#6366F1', bg: 'rgba(99, 102, 241, 0.1)', defaultDuration: 10 },
+  { name: 'Stretch', icon: 'body', color: '#14B8A6', bg: 'rgba(20, 184, 166, 0.1)', defaultDuration: 10 },
 ];
+
+export function getDefaultDuration(name: string): number {
+  const found = PREDEFINED_HABITS.find(
+    (h) => h.name.toLowerCase() === name.toLowerCase()
+  );
+  return found?.defaultDuration ?? 10;
+}
 
 const ICON_OPTIONS: { icon: string; color: string; bg: string }[] = [
   { icon: 'water', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)' },
@@ -60,7 +68,7 @@ export function getHabitStyle(name: string, icon?: string): { icon: string; colo
 
 interface HabitLibraryProps {
   existingHabitNames: string[];
-  onAddHabit: (name: string, icon?: string) => void;
+  onAddHabit: (name: string, icon: string | undefined, duration: number) => void;
 }
 
 export default function HabitLibrary({ existingHabitNames, onAddHabit }: HabitLibraryProps) {
@@ -74,7 +82,7 @@ export default function HabitLibrary({ existingHabitNames, onAddHabit }: HabitLi
   const handleCustomAdd = () => {
     const trimmed = customName.trim();
     if (!trimmed) return;
-    onAddHabit(trimmed, selectedIcon);
+    onAddHabit(trimmed, selectedIcon, getDefaultDuration(trimmed));
     setCustomName('');
   };
 
@@ -87,7 +95,7 @@ export default function HabitLibrary({ existingHabitNames, onAddHabit }: HabitLi
           return (
             <Pressable
               key={habit.name}
-              onPress={() => !isAdded && onAddHabit(habit.name, habit.icon)}
+              onPress={() => !isAdded && onAddHabit(habit.name, habit.icon, habit.defaultDuration)}
               className="items-center rounded-2xl border border-border p-3"
               style={{
                 width: '23%',

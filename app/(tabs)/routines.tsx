@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Switch, LayoutAnimation, UIManager, Platform } from 'react-native';
+import { View, Text, Pressable, ScrollView, Modal, LayoutAnimation, UIManager, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useCallback } from 'react';
@@ -163,9 +163,10 @@ function CollapsibleSection({
 // --- Main screen ---
 
 export default function RoutinesScreen() {
-  const { morningRoutine, nightRoutine, addHabit, removeHabit, reorderHabits, selectAudio, updateRoutine } = useRoutineStore();
+  const { morningRoutine, nightRoutine, addHabit, removeHabit, updateHabit, reorderHabits, selectAudio, updateRoutine } = useRoutineStore();
   const [activeTab, setActiveTab] = useState<RoutineType>('morning');
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const routine = activeTab === 'morning' ? morningRoutine : nightRoutine;
 
@@ -173,8 +174,8 @@ export default function RoutinesScreen() {
     updateRoutine(activeTab, { targetTime: time });
   }, [activeTab, updateRoutine]);
 
-  const handleAddHabit = (name: string, icon?: string) => {
-    addHabit(activeTab, { name, icon });
+  const handleAddHabit = (name: string, icon: string | undefined, duration: number) => {
+    addHabit(activeTab, { name, icon, duration });
   };
 
   const moveHabit = useCallback((index: number, direction: 'up' | 'down') => {
@@ -186,22 +187,23 @@ export default function RoutinesScreen() {
     reorderHabits(activeTab, habits);
   }, [routine.habits, activeTab, reorderHabits]);
 
-  const blockedApps = [
-    { name: 'Instagram', icon: 'logo-instagram', enabled: true },
-    { name: 'TikTok', icon: 'videocam', enabled: true, accentColor: '#06B6D4' },
-    { name: 'X', icon: 'logo-twitter', enabled: true, accentColor: '#1DA1F2' },
-    { name: 'Reddit', icon: 'logo-reddit', enabled: true, accentColor: '#FF4500' },
-    { name: 'Facebook', icon: 'logo-facebook', enabled: true, accentColor: '#1877F2' },
-    { name: 'Gmail', icon: 'mail', enabled: false, accentColor: '#EF4444' },
+  const AGGRESSIVENESS_OPTIONS: { value: 'low' | 'medium' | 'high'; label: string; desc: string }[] = [
+    { value: 'low', label: 'Low', desc: 'One reminder after 10 min in background' },
+    { value: 'medium', label: 'Medium', desc: 'Reminders every 5 min in background' },
+    { value: 'high', label: 'High', desc: 'Reminders every 2 min in background' },
   ];
 
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Header */}
-      <View className="items-center px-6 py-4 border-b border-border">
-        <Text className="text-lg font-bold text-foreground" style={{ letterSpacing: -0.5 }}>
+      <View className="flex-row items-center justify-center px-6 py-4 border-b border-border">
+        <View style={{ width: 32 }} />
+        <Text className="flex-1 text-lg font-bold text-foreground text-center" style={{ letterSpacing: -0.5 }}>
           Manage Routines
         </Text>
+        <Pressable onPress={() => setShowHelp(true)} hitSlop={8}>
+          <Ionicons name="help-circle-outline" size={24} color={Colors.mutedForeground} />
+        </Pressable>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -293,6 +295,25 @@ export default function RoutinesScreen() {
                   )}
                 </View>
 
+                {/* Duration controls */}
+                <View className="flex-row items-center" style={{ gap: 2 }}>
+                  <Pressable
+                    onPress={() => updateHabit(activeTab, habit.id, { duration: Math.max((habit.duration ?? 10) - 5, 5) })}
+                    hitSlop={6}
+                  >
+                    <Ionicons name="chevron-down" size={14} color={Colors.mutedForeground} />
+                  </Pressable>
+                  <Text className="text-xs font-semibold text-muted-foreground" style={{ minWidth: 28, textAlign: 'center' }}>
+                    {habit.duration ?? 10}m
+                  </Text>
+                  <Pressable
+                    onPress={() => updateHabit(activeTab, habit.id, { duration: Math.min((habit.duration ?? 10) + 5, 120) })}
+                    hitSlop={6}
+                  >
+                    <Ionicons name="chevron-up" size={14} color={Colors.mutedForeground} />
+                  </Pressable>
+                </View>
+
                 {/* Reorder buttons */}
                 <View className="items-center" style={{ gap: 2 }}>
                   <Pressable
@@ -330,43 +351,127 @@ export default function RoutinesScreen() {
           </View>
         </CollapsibleSection>
 
-        {/* App Jail */}
-        <CollapsibleSection title="App Jail" icon="lock-closed" rightLabel="Strict Mode">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6">
-            <View className="flex-row gap-4">
-              {blockedApps.map((app, i) => (
-                <View key={i} className="w-32 p-4 bg-card border border-border rounded-2xl items-center gap-3 overflow-hidden">
-                  <View
-                    className="w-12 h-12 rounded-xl border border-border items-center justify-center"
-                    style={{ backgroundColor: app.enabled ? Colors.foreground : 'rgba(245, 245, 245, 0.5)' }}
-                  >
-                    <Ionicons
-                      name={app.icon as any}
-                      size={24}
-                      color={app.enabled ? 'white' : (app.accentColor ?? Colors.mutedForeground)}
-                    />
+        {/* Notifications */}
+        <CollapsibleSection title="Notifications" icon="notifications" rightLabel={routine.notificationAggressiveness}>
+          <View className="bg-card rounded-2xl p-4 border border-border" style={{ gap: 8 }}>
+            {AGGRESSIVENESS_OPTIONS.map((opt) => {
+              const isActive = routine.notificationAggressiveness === opt.value;
+              return (
+                <Pressable
+                  key={opt.value}
+                  onPress={() => updateRoutine(activeTab, { notificationAggressiveness: opt.value })}
+                  className="flex-row items-center p-3 rounded-xl"
+                  style={{
+                    backgroundColor: isActive ? 'rgba(255, 102, 0, 0.08)' : Colors.secondary,
+                    borderWidth: isActive ? 1.5 : 1,
+                    borderColor: isActive ? Colors.primary : Colors.border,
+                  }}
+                >
+                  <View className="flex-1">
+                    <Text
+                      className="text-sm font-semibold"
+                      style={{ color: isActive ? Colors.primary : Colors.foreground }}
+                    >
+                      {opt.label}
+                    </Text>
+                    <Text className="text-xs text-muted-foreground mt-0.5">{opt.desc}</Text>
                   </View>
-                  <Text className="text-xs font-medium text-foreground">{app.name}</Text>
-                  <Switch
-                    value={app.enabled}
-                    trackColor={{ false: Colors.secondary, true: Colors.primary }}
-                    thumbColor={app.enabled ? Colors.foreground : Colors.mutedForeground}
-                    style={{ transform: [{ scale: 0.8 }] }}
-                  />
-                </View>
-              ))}
-
-              {/* Add App */}
-              <Pressable className="w-32 p-4 border-2 border-dashed border-border rounded-2xl items-center justify-center gap-2">
-                <View className="w-10 h-10 rounded-full bg-secondary items-center justify-center">
-                  <Ionicons name="add" size={20} color={Colors.mutedForeground} />
-                </View>
-                <Text className="text-xs font-medium text-muted-foreground">Add App</Text>
-              </Pressable>
-            </View>
-          </ScrollView>
+                  {isActive && <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />}
+                </Pressable>
+              );
+            })}
+          </View>
         </CollapsibleSection>
       </ScrollView>
+
+      {/* Help Modal */}
+      <Modal visible={showHelp} animationType="slide" transparent>
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <View
+            className="bg-background rounded-t-3xl px-6 pt-6 pb-10"
+            style={{ maxHeight: '85%' }}
+          >
+            <View className="flex-row items-center justify-between mb-5">
+              <Text className="text-lg font-bold text-foreground">How Routines Work</Text>
+              <Pressable onPress={() => setShowHelp(false)} hitSlop={8}>
+                <Ionicons name="close-circle" size={28} color={Colors.mutedForeground} />
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={{ gap: 20 }}>
+                {/* Morning / Night toggle */}
+                <View>
+                  <View className="flex-row items-center gap-2 mb-1.5">
+                    <Ionicons name="swap-horizontal" size={18} color={Colors.primary} />
+                    <Text className="text-sm font-bold text-foreground">Morning & Night</Text>
+                  </View>
+                  <Text className="text-sm text-muted-foreground leading-5">
+                    You have two separate routines. Use the toggle at the top to switch between your morning and night routine. Each has its own habits, trigger time, and alarm sound.
+                  </Text>
+                </View>
+
+                {/* Trigger time */}
+                <View>
+                  <View className="flex-row items-center gap-2 mb-1.5">
+                    <Ionicons name="alarm-outline" size={18} color={Colors.primary} />
+                    <Text className="text-sm font-bold text-foreground">Trigger Time & Alarm</Text>
+                  </View>
+                  <Text className="text-sm text-muted-foreground leading-5">
+                    Set the time your routine should start. Tap the clock to adjust it. You can also pick an alarm sound that plays when the routine activates.
+                  </Text>
+                </View>
+
+                {/* Habit stack */}
+                <View>
+                  <View className="flex-row items-center gap-2 mb-1.5">
+                    <Ionicons name="list-outline" size={18} color={Colors.primary} />
+                    <Text className="text-sm font-bold text-foreground">Habit Stack</Text>
+                  </View>
+                  <Text className="text-sm text-muted-foreground leading-5">
+                    These are the tasks you complete each routine. Add habits from the library or create custom ones. Reorder them with the arrow buttons to set the sequence you want to follow.
+                  </Text>
+                </View>
+
+                {/* Duration */}
+                <View>
+                  <View className="flex-row items-center gap-2 mb-1.5">
+                    <Ionicons name="timer-outline" size={18} color={Colors.primary} />
+                    <Text className="text-sm font-bold text-foreground">Duration</Text>
+                  </View>
+                  <Text className="text-sm text-muted-foreground leading-5">
+                    Each habit has a duration (in minutes) shown next to its name. Use the up/down arrows to adjust it in 5-minute increments. The dashboard timer uses these durations to calculate your remaining time.
+                  </Text>
+                </View>
+
+                {/* Notifications */}
+                <View>
+                  <View className="flex-row items-center gap-2 mb-1.5">
+                    <Ionicons name="notifications-outline" size={18} color={Colors.primary} />
+                    <Text className="text-sm font-bold text-foreground">Notifications</Text>
+                  </View>
+                  <Text className="text-sm text-muted-foreground leading-5">
+                    Choose how aggressively the app reminds you to get back on track if you leave during a routine. Low sends one reminder, Medium reminds every 5 minutes, and High every 2 minutes.
+                  </Text>
+                </View>
+
+                {/* Soft blocking */}
+                <View>
+                  <View className="flex-row items-center gap-2 mb-1.5">
+                    <Ionicons name="lock-closed-outline" size={18} color={Colors.primary} />
+                    <Text className="text-sm font-bold text-foreground">Soft Blocking</Text>
+                  </View>
+                  <Text className="text-sm text-muted-foreground leading-5">
+                    When your routine is active, the app will gently remind you to stay focused until all habits are checked off. Complete every task to end the routine and build your streak.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ height: 20 }} />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

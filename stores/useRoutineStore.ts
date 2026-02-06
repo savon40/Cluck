@@ -10,6 +10,7 @@ import {
   markRoutineComplete as markComplete,
   recordViolation as recordViol,
 } from './storage';
+import { stopNagging } from '@/services/appStateService';
 
 interface RoutineStore {
   morningRoutine: Routine;
@@ -23,6 +24,7 @@ interface RoutineStore {
   toggleHabit: (type: RoutineType, habitId: string) => void;
   addHabit: (type: RoutineType, habit: Omit<Habit, 'id' | 'completed'>) => void;
   removeHabit: (type: RoutineType, habitId: string) => void;
+  updateHabit: (type: RoutineType, habitId: string, updates: Partial<Habit>) => void;
   reorderHabits: (type: RoutineType, habits: Habit[]) => void;
   selectAudio: (type: RoutineType, audioId: string) => void;
   updateRoutine: (type: RoutineType, updates: Partial<Routine>) => void;
@@ -61,6 +63,7 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
 
     // Check if all habits completed
     if (routine.habits.every((h) => h.completed)) {
+      stopNagging();
       get().markRoutineComplete(type);
     }
   },
@@ -82,6 +85,16 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
     const key = type === 'morning' ? 'morningRoutine' : 'nightRoutine';
     const routine = { ...get()[key] };
     routine.habits = routine.habits.filter((h) => h.id !== habitId);
+    saveRoutine(type, routine);
+    set({ [key]: routine });
+  },
+
+  updateHabit: (type, habitId, updates) => {
+    const key = type === 'morning' ? 'morningRoutine' : 'nightRoutine';
+    const routine = { ...get()[key] };
+    routine.habits = routine.habits.map((h) =>
+      h.id === habitId ? { ...h, ...updates } : h
+    );
     saveRoutine(type, routine);
     set({ [key]: routine });
   },
