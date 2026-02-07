@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Modal, LayoutAnimation, UIManager, Platform } from 'react-native';
+import { View, Text, Pressable, ScrollView, Modal, KeyboardAvoidingView, LayoutAnimation, UIManager, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useCallback } from 'react';
@@ -206,6 +206,7 @@ export default function RoutinesScreen() {
         </Pressable>
       </View>
 
+      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Morning/Night Toggle */}
         <View className="mx-6 mt-4 mb-6">
@@ -382,7 +383,8 @@ export default function RoutinesScreen() {
             })}
           </View>
         </CollapsibleSection>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Help Modal */}
       <Modal visible={showHelp} animationType="slide" transparent>

@@ -1,26 +1,30 @@
 {
   "expo": {
-    "name": "Locked In",
-    "slug": "locked-in",
+    "name": "Cluck",
+    "slug": "cluck",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "lockedin",
+    "scheme": "cluck",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.lockedin.app",
+      "bundleIdentifier": "com.savon.cluck",
       "infoPlist": {
         "UIBackgroundModes": [
           "fetch",
           "remote-notification",
+          "audio",
+          "fetch",
+          "remote-notification",
           "audio"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.lockedin.app",
+      "package": "com.savon.cluck",
       "adaptiveIcon": {
         "backgroundColor": "#FFF5ED",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -61,6 +65,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1944fbda-c879-4ed0-9857-d71231badfcd"
+      }
     }
   }
 }

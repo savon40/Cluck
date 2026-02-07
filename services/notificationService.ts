@@ -4,7 +4,7 @@ const NAG_MESSAGES = [
   "Your routine isn't done yet!",
   'Get back on track!',
   "You're so close — finish your routine!",
-  'Stay locked in. Complete your habits.',
+  'Stay on track. Complete your habits.',
   "Don't break the streak!",
   'Your future self will thank you.',
   'Almost there — just a few habits left!',
@@ -51,7 +51,7 @@ export async function scheduleNagNotification(delaySeconds: number): Promise<voi
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'Locked In',
+      title: 'Cluck',
       body: message,
       sound: 'default',
     },

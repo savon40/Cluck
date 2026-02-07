@@ -1,35 +1,8 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Rect, Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { saveSettings, getSettings } from '@/stores/storage';
-
-function LockIcon() {
-  return (
-    <View style={{ shadowColor: '#FF6600', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.15, shadowRadius: 40 }}>
-      <Svg width={120} height={120} viewBox="0 0 24 24" fill="none">
-        <Defs>
-          <LinearGradient id="lockGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#ffffff" />
-            <Stop offset="50%" stopColor="#a1a1aa" />
-            <Stop offset="100%" stopColor="#52525b" />
-          </LinearGradient>
-        </Defs>
-        <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="url(#lockGrad)" />
-        <Path
-          d="M7 11V7a5 5 0 0 1 10 0v4"
-          stroke="url(#lockGrad)"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="transparent"
-        />
-        <Circle cx="12" cy="16.5" r="1.5" fill="#18181b" />
-      </Svg>
-    </View>
-  );
-}
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -45,23 +18,25 @@ export default function WelcomeScreen() {
       <View className="flex-1 items-center justify-between px-6 pt-16 pb-12">
         {/* Top Visual Cluster */}
         <View className="flex-1 w-full items-center justify-center gap-10">
-          {/* Massive Typography */}
-          <View>
-            <Text
-              className="text-foreground text-center uppercase"
-              style={{ fontSize: 80, lineHeight: 72, fontWeight: '900', letterSpacing: -3 }}
-            >
-              Locked{'\n'}In
-            </Text>
-          </View>
+          {/* Logo */}
+          <Image
+            source={require('@/assets/images/splash-icon.png')}
+            style={{ width: 280, height: 280 }}
+            resizeMode="contain"
+          />
 
-          {/* Lock Icon */}
-          <LockIcon />
+          {/* App Name */}
+          {/* <Text
+            className="text-foreground text-center uppercase"
+            style={{ fontSize: 72, lineHeight: 72, fontWeight: '900', letterSpacing: -3 }}
+          >
+            Cluck
+          </Text> */}
 
           {/* Taglines */}
           <View className="items-center gap-1">
             <Text className="text-lg text-muted-foreground text-center" style={{ fontStyle: 'italic' }}>
-              Break the doom-loop.
+              Rise with purpose.
             </Text>
             <Text className="text-lg font-semibold text-foreground text-center">
               Master your morning.

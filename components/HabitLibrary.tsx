@@ -1,4 +1,4 @@
-import { View, Text, Pressable, TextInput, ScrollView } from 'react-native';
+import { View, Text, Pressable, TextInput, ScrollView, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Colors } from '@/constants/theme';
@@ -74,6 +74,12 @@ interface HabitLibraryProps {
 export default function HabitLibrary({ existingHabitNames, onAddHabit }: HabitLibraryProps) {
   const [customName, setCustomName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<string>(ICON_OPTIONS[0].icon);
+  const { width: screenWidth } = useWindowDimensions();
+
+  const GAP = 10;
+  const COLUMNS = 4;
+  const PARENT_PADDING = 48; // px-6 on each side
+  const itemWidth = (screenWidth - PARENT_PADDING - GAP * (COLUMNS - 1)) / COLUMNS;
 
   const normalizedExisting = existingHabitNames.map((n) => n.toLowerCase());
 
@@ -98,7 +104,7 @@ export default function HabitLibrary({ existingHabitNames, onAddHabit }: HabitLi
               onPress={() => !isAdded && onAddHabit(habit.name, habit.icon, habit.defaultDuration)}
               className="items-center rounded-2xl border border-border p-3"
               style={{
-                width: '23%',
+                width: itemWidth,
                 opacity: isAdded ? 0.4 : 1,
                 backgroundColor: isAdded ? Colors.secondary : Colors.card,
               }}

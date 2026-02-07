@@ -155,7 +155,7 @@ export default function SettingsScreen() {
               <Ionicons name="information-circle" size={20} color={Colors.mutedForeground} />
             </View>
             <View className="flex-1">
-              <Text className="text-base font-semibold text-foreground">Locked In</Text>
+              <Text className="text-base font-semibold text-foreground">Cluck</Text>
               <Text className="text-xs text-muted-foreground mt-0.5">Version 1.0.0</Text>
             </View>
           </View>

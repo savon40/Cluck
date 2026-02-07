@@ -15,7 +15,6 @@ interface StoreState {
 type GetStoreState = () => StoreState;
 
 let subscription: NativeEventSubscription | null = null;
-let nagTimer: ReturnType<typeof setInterval> | null = null;
 let getStore: GetStoreState | null = null;
 
 function shouldStartNagging(): boolean {
@@ -32,6 +31,8 @@ function shouldStartNagging(): boolean {
   return true;
 }
 
+const MAX_SCHEDULED_NAGS = 30;
+
 function startNagging(): void {
   stopNagging();
 
@@ -43,24 +44,13 @@ function startNagging(): void {
   const intervalMs = getIntervalForAggressiveness(routine.notificationAggressiveness);
   const intervalSeconds = Math.round(intervalMs / 1000);
 
-  // Schedule the first notification
-  scheduleNagNotification(intervalSeconds);
-
-  // Keep scheduling at the configured interval
-  nagTimer = setInterval(() => {
-    if (!shouldStartNagging()) {
-      stopNagging();
-      return;
-    }
-    scheduleNagNotification(intervalSeconds);
-  }, intervalMs);
+  // Pre-schedule multiple notifications so they fire even while backgrounded
+  for (let i = 1; i <= MAX_SCHEDULED_NAGS; i++) {
+    scheduleNagNotification(intervalSeconds * i);
+  }
 }
 
 export function stopNagging(): void {
-  if (nagTimer !== null) {
-    clearInterval(nagTimer);
-    nagTimer = null;
-  }
   cancelAllNags();
 }
 
