@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, Pressable, ScrollView, RefreshControl, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -234,14 +234,11 @@ export default function DashboardScreen() {
         className="flex-row items-center justify-between px-6 py-4 border-b border-border"
         style={{ backgroundColor: 'rgba(255, 247, 240, 0.8)' }}
       >
-        <View>
-          <Text className="text-sm font-medium text-muted-foreground" style={{ fontVariant: ['tabular-nums'] }}>
-            {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-          <Text className="text-xs text-muted-foreground" style={{ opacity: 0.7 }}>
-            {now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-          </Text>
-        </View>
+        <Image
+          source={require('@/assets/images/splash-icon.png')}
+          style={{ width: 32, height: 32 }}
+          resizeMode="contain"
+        />
         <View
           className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
           style={{ backgroundColor: 'rgba(255, 102, 0, 0.1)', borderWidth: 1, borderColor: 'rgba(255, 102, 0, 0.2)' }}

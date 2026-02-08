@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Modal, KeyboardAvoidingView, LayoutAnimation, UIManager, Platform } from 'react-native';
+import { View, Text, Pressable, ScrollView, Modal, KeyboardAvoidingView, LayoutAnimation, UIManager, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useCallback } from 'react';
@@ -196,9 +196,13 @@ export default function RoutinesScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Header */}
-      <View className="flex-row items-center justify-center px-6 py-4 border-b border-border">
-        <View style={{ width: 32 }} />
-        <Text className="flex-1 text-lg font-bold text-foreground text-center" style={{ letterSpacing: -0.5 }}>
+      <View className="flex-row items-center justify-between px-6 py-4 border-b border-border">
+        <Image
+          source={require('@/assets/images/splash-icon.png')}
+          style={{ width: 32, height: 32 }}
+          resizeMode="contain"
+        />
+        <Text className="text-lg font-bold text-foreground" style={{ letterSpacing: -0.5 }}>
           Manage Routines
         </Text>
         <Pressable onPress={() => setShowHelp(true)} hitSlop={8}>

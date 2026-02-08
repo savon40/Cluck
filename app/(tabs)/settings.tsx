@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useCallback } from 'react';
@@ -65,10 +65,16 @@ export default function SettingsScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className="items-center px-6 py-4 border-b border-border">
+        <View className="flex-row items-center justify-between px-6 py-4 border-b border-border">
+          <Image
+            source={require('@/assets/images/splash-icon.png')}
+            style={{ width: 32, height: 32 }}
+            resizeMode="contain"
+          />
           <Text className="text-lg font-bold text-foreground" style={{ letterSpacing: -0.5 }}>
             Settings
           </Text>
+          <View style={{ width: 32 }} />
         </View>
 
         {/* Alarm Volume */}
@@ -148,12 +154,12 @@ export default function SettingsScreen() {
 
           {/* About */}
           <View className="flex-row items-center bg-card rounded-2xl p-4 border border-border">
-            <View
-              className="w-10 h-10 rounded-xl items-center justify-center mr-3"
-              style={{ backgroundColor: Colors.secondary }}
-            >
-              <Ionicons name="information-circle" size={20} color={Colors.mutedForeground} />
-            </View>
+            <Image
+              source={require('@/assets/images/splash-icon.png')}
+              style={{ width: 40, height: 40 }}
+              resizeMode="contain"
+              className="mr-3"
+            />
             <View className="flex-1">
               <Text className="text-base font-semibold text-foreground">Cluck</Text>
               <Text className="text-xs text-muted-foreground mt-0.5">Version 1.0.0</Text>
