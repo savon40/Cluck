@@ -9,6 +9,8 @@ import {
   getTodayCompletion,
   markRoutineComplete as markComplete,
   recordViolation as recordViol,
+  getLastActiveDate,
+  setLastActiveDate,
 } from './storage';
 import { stopNagging } from '@/services/appStateService';
 
@@ -22,7 +24,7 @@ interface RoutineStore {
   loadData: () => void;
   setActiveRoutineType: (type: RoutineType) => void;
   toggleHabit: (type: RoutineType, habitId: string) => void;
-  addHabit: (type: RoutineType, habit: Omit<Habit, 'id' | 'completed'>) => void;
+  addHabit: (type: RoutineType, habit: Omit<Habit, 'id' | 'completed' | 'completedAt'>) => void;
   removeHabit: (type: RoutineType, habitId: string) => void;
   updateHabit: (type: RoutineType, habitId: string, updates: Partial<Habit>) => void;
   reorderHabits: (type: RoutineType, habits: Habit[]) => void;
@@ -32,6 +34,7 @@ interface RoutineStore {
   recordViolation: () => void;
   resetDailyHabits: (type: RoutineType) => void;
   isRoutineComplete: (type: RoutineType) => boolean;
+  checkNewDay: () => void;
 }
 
 export const useRoutineStore = create<RoutineStore>((set, get) => ({
@@ -56,7 +59,13 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
     const key = type === 'morning' ? 'morningRoutine' : 'nightRoutine';
     const routine = { ...get()[key] };
     routine.habits = routine.habits.map((h) =>
-      h.id === habitId ? { ...h, completed: !h.completed } : h
+      h.id === habitId
+        ? {
+            ...h,
+            completed: !h.completed,
+            completedAt: !h.completed ? new Date().toISOString() : undefined,
+          }
+        : h
     );
     saveRoutine(type, routine);
     set({ [key]: routine });
@@ -133,7 +142,7 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
   resetDailyHabits: (type) => {
     const key = type === 'morning' ? 'morningRoutine' : 'nightRoutine';
     const routine = { ...get()[key] };
-    routine.habits = routine.habits.map((h) => ({ ...h, completed: false }));
+    routine.habits = routine.habits.map((h) => ({ ...h, completed: false, completedAt: undefined }));
     saveRoutine(type, routine);
     set({ [key]: routine });
   },
@@ -141,5 +150,18 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
   isRoutineComplete: (type) => {
     const key = type === 'morning' ? 'morningRoutine' : 'nightRoutine';
     return get()[key].habits.every((h) => h.completed);
+  },
+
+  checkNewDay: () => {
+    const today = getTodayKey();
+    const lastActive = getLastActiveDate();
+
+    if (lastActive !== today) {
+      get().resetDailyHabits('morning');
+      get().resetDailyHabits('night');
+      setLastActiveDate(today);
+    }
+
+    get().loadData();
   },
 }));

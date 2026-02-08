@@ -5,6 +5,7 @@ export interface Habit {
   icon?: string;
   duration?: number; // estimated minutes
   completed: boolean;
+  completedAt?: string; // ISO timestamp
 }
 
 export interface Routine {
@@ -21,6 +22,8 @@ export interface DayCompletion {
   violations: number;
   morningStartTime?: string;
   nightStartTime?: string;
+  morningCompletedAt?: string; // ISO timestamp
+  nightCompletedAt?: string;   // ISO timestamp
 }
 
 export interface StreakData {

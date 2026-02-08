@@ -1,7 +1,7 @@
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { getTodayCompletion } from '@/stores/storage';
 import { Colors } from '@/constants/theme';
@@ -12,12 +12,19 @@ import type { Habit, RoutineType } from '@/types';
 
 // --- Helpers ---
 
+function formatCompletionTime(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
 function getRoutineStatus(
   targetTime: string,
   isComplete: boolean,
+  completedAt?: string,
 ): { text: string; color: string } {
   if (isComplete) {
-    return { text: 'Complete', color: Colors.success };
+    const timeStr = completedAt ? ` at ${formatCompletionTime(completedAt)}` : '';
+    return { text: `Complete${timeStr}`, color: Colors.success };
   }
 
   const now = new Date();
@@ -72,6 +79,11 @@ function HabitItem({
         <Text className="text-base font-medium text-muted-foreground line-through flex-1">
           {habit.name}
         </Text>
+        {habit.completedAt && (
+          <Text className="text-xs font-medium mr-2" style={{ color: Colors.success }}>
+            {formatCompletionTime(habit.completedAt)}
+          </Text>
+        )}
         <View
           className="w-8 h-8 rounded-full items-center justify-center"
           style={{ backgroundColor: style.bg }}
@@ -144,9 +156,17 @@ export default function DashboardScreen() {
     streakData,
     toggleHabit,
     updateRoutine,
+    checkNewDay,
   } = useRoutineStore();
 
   const [now, setNow] = useState(new Date());
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    checkNewDay();
+    setRefreshing(false);
+  }, [checkNewDay]);
 
   // Tick every 30s to keep countdown fresh
   useEffect(() => {
@@ -175,10 +195,15 @@ export default function DashboardScreen() {
   const isComplete = completedCount === totalCount && totalCount > 0;
   const currentTaskIndex = routine.habits.findIndex((h) => !h.completed);
 
+  // Derive routine completion timestamp
+  const routineCompletedAt = routineType === 'morning'
+    ? todayCompletion.morningCompletedAt
+    : todayCompletion.nightCompletedAt;
+
   // Smart status: overdue / starts in / complete
   const routineStatus = useMemo(
-    () => getRoutineStatus(routine.targetTime, isComplete),
-    [routine.targetTime, isComplete, now]
+    () => getRoutineStatus(routine.targetTime, isComplete, routineCompletedAt),
+    [routine.targetTime, isComplete, routineCompletedAt, now]
   );
 
   // Check if the OTHER routine is complete today
@@ -186,6 +211,9 @@ export default function DashboardScreen() {
     ? todayCompletion.night
     : todayCompletion.morning;
   const otherRoutineLabel = routineType === 'morning' ? 'Night' : 'Morning';
+  const otherRoutineCompletedAt = routineType === 'morning'
+    ? todayCompletion.nightCompletedAt
+    : todayCompletion.morningCompletedAt;
 
   // Estimated time remaining based on habit durations
   const estimatedMinutes = routine.habits
@@ -225,7 +253,18 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
+          />
+        }
+      >
         {/* Routine Type + Countdown + Toggle */}
         {/* Completion banner for the other routine */}
         {otherRoutineComplete && (
@@ -234,7 +273,7 @@ export default function DashboardScreen() {
           >
             <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
             <Text className="text-xs font-semibold ml-1.5" style={{ color: Colors.success }}>
-              {otherRoutineLabel} Complete
+              {otherRoutineLabel} Complete{otherRoutineCompletedAt ? ` at ${formatCompletionTime(otherRoutineCompletedAt)}` : ''}
             </Text>
           </View>
         )}
@@ -282,26 +321,45 @@ export default function DashboardScreen() {
         <View className="items-center py-4">
           <ProgressRing size={256} strokeWidth={8} progress={progress}>
             <View className="items-center">
-              {!isComplete && routine.isActive && (
-                <View
-                  className="flex-row items-center mb-2 px-3 py-1 rounded-full bg-card border border-border"
-                  style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 }}
-                >
-                  <View className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />
-                  <Text className="text-muted-foreground font-bold uppercase" style={{ fontSize: 10, letterSpacing: 2 }}>
-                    Focus Mode
+              {isComplete ? (
+                <>
+                  <Ionicons name="checkmark-circle" size={48} color={Colors.success} />
+                  {routineCompletedAt && (
+                    <Text
+                      className="font-bold mt-1"
+                      style={{ fontSize: 20, color: Colors.success }}
+                    >
+                      {formatCompletionTime(routineCompletedAt)}
+                    </Text>
+                  )}
+                  <Text className="text-sm font-medium text-muted-foreground mt-1">
+                    All {totalCount} Tasks Complete
                   </Text>
-                </View>
+                </>
+              ) : (
+                <>
+                  {routine.isActive && (
+                    <View
+                      className="flex-row items-center mb-2 px-3 py-1 rounded-full bg-card border border-border"
+                      style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 }}
+                    >
+                      <View className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />
+                      <Text className="text-muted-foreground font-bold uppercase" style={{ fontSize: 10, letterSpacing: 2 }}>
+                        Focus Mode
+                      </Text>
+                    </View>
+                  )}
+                  <Text
+                    className="text-foreground font-black"
+                    style={{ fontSize: 56, letterSpacing: -2, fontVariant: ['tabular-nums'], lineHeight: 56 }}
+                  >
+                    {timeDisplay}
+                  </Text>
+                  <Text className="text-sm font-medium text-muted-foreground mt-1">
+                    {completedCount}/{totalCount} Tasks Complete
+                  </Text>
+                </>
               )}
-              <Text
-                className="text-foreground font-black"
-                style={{ fontSize: 56, letterSpacing: -2, fontVariant: ['tabular-nums'], lineHeight: 56 }}
-              >
-                {timeDisplay}
-              </Text>
-              <Text className="text-sm font-medium text-muted-foreground mt-1">
-                {completedCount}/{totalCount} Tasks Complete
-              </Text>
             </View>
           </ProgressRing>
         </View>

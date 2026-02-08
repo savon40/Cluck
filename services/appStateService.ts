@@ -10,6 +10,8 @@ import type { Routine } from '@/types';
 interface StoreState {
   morningRoutine: Routine;
   nightRoutine: Routine;
+  checkNewDay: () => void;
+  loadData: () => void;
 }
 
 type GetStoreState = () => StoreState;
@@ -59,6 +61,9 @@ function handleAppStateChange(nextState: AppStateStatus): void {
     startNagging();
   } else if (nextState === 'active') {
     stopNagging();
+    if (getStore) {
+      getStore().checkNewDay();
+    }
   }
 }
 

@@ -10,6 +10,7 @@ const KEYS = {
   STREAK_DATA: 'streak_data',
   SETTINGS: 'settings',
   AUDIO_LIBRARY: 'audio_library',
+  LAST_ACTIVE_DATE: 'last_active_date',
 } as const;
 
 // Helpers
@@ -102,6 +103,8 @@ export function markRoutineComplete(type: 'morning' | 'night'): void {
     data.completionHistory[today] = { morning: false, night: false, violations: 0 };
   }
   data.completionHistory[today][type] = true;
+  const completedAtKey = type === 'morning' ? 'morningCompletedAt' : 'nightCompletedAt';
+  data.completionHistory[today][completedAtKey] = new Date().toISOString();
 
   // Update streak if both routines completed today
   const todayData = data.completionHistory[today];
@@ -125,6 +128,15 @@ export function recordViolation(): void {
   data.completionHistory[today].violations += 1;
 
   saveStreakData(data);
+}
+
+// Last active date operations
+export function getLastActiveDate(): string | undefined {
+  return storage.getString(KEYS.LAST_ACTIVE_DATE);
+}
+
+export function setLastActiveDate(date: string): void {
+  storage.set(KEYS.LAST_ACTIVE_DATE, date);
 }
 
 // Settings operations
