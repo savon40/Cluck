@@ -32,11 +32,11 @@ export function getIntervalForAggressiveness(level: 'low' | 'medium' | 'high'): 
 export function configureNotifications(): void {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: false,
-      shouldPlaySound: false,
+      shouldShowAlert: true,
+      shouldPlaySound: true,
       shouldSetBadge: false,
-      shouldShowBanner: false,
-      shouldShowList: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
     }),
   });
 }
@@ -58,7 +58,7 @@ export async function scheduleNagNotification(delaySeconds: number): Promise<voi
     content: {
       title: 'Cluck',
       body: message,
-      sound: 'default',
+      sound: 'rooster.wav',
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -113,7 +113,7 @@ export async function scheduleRoutineReminders(morningTime: string, nightTime: s
     content: {
       title: 'Cluck',
       body: 'Your morning routine starts in 5 minutes',
-      sound: 'default',
+      sound: 'rooster.wav',
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
@@ -128,7 +128,7 @@ export async function scheduleRoutineReminders(morningTime: string, nightTime: s
     content: {
       title: 'Cluck',
       body: 'It is time to begin your morning routine',
-      sound: 'default',
+      sound: 'rooster.wav',
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
@@ -144,7 +144,7 @@ export async function scheduleRoutineReminders(morningTime: string, nightTime: s
     content: {
       title: 'Cluck',
       body: 'Your night routine starts in 5 minutes',
-      sound: 'default',
+      sound: 'rooster.wav',
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
@@ -159,7 +159,7 @@ export async function scheduleRoutineReminders(morningTime: string, nightTime: s
     content: {
       title: 'Cluck',
       body: 'It is time to begin your night routine',
-      sound: 'default',
+      sound: 'rooster.wav',
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
