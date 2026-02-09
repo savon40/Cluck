@@ -69,9 +69,10 @@ export function getHabitStyle(name: string, icon?: string): { icon: string; colo
 interface HabitLibraryProps {
   existingHabitNames: string[];
   onAddHabit: (name: string, icon: string | undefined, duration: number) => void;
+  onCustomInputFocus?: () => void;
 }
 
-export default function HabitLibrary({ existingHabitNames, onAddHabit }: HabitLibraryProps) {
+export default function HabitLibrary({ existingHabitNames, onAddHabit, onCustomInputFocus }: HabitLibraryProps) {
   const [customName, setCustomName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<string>(ICON_OPTIONS[0].icon);
   const { width: screenWidth } = useWindowDimensions();
@@ -154,7 +155,7 @@ export default function HabitLibrary({ existingHabitNames, onAddHabit }: HabitLi
             style={{ color: Colors.foreground }}
             onSubmitEditing={handleCustomAdd}
             returnKeyType="done"
-            blurOnSubmit={false}
+            onFocus={onCustomInputFocus}
           />
           <Pressable onPress={handleCustomAdd}>
             <Ionicons name="add-circle" size={24} color={Colors.primary} />

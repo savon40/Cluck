@@ -165,6 +165,7 @@ export default function DashboardScreen() {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     checkNewDay();
+    setNow(new Date());
     setRefreshing(false);
   }, [checkNewDay]);
 

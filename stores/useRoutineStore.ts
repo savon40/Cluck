@@ -13,6 +13,7 @@ import {
   setLastActiveDate,
 } from './storage';
 import { stopNagging } from '@/services/appStateService';
+import { scheduleRoutineReminders } from '@/services/notificationService';
 
 interface RoutineStore {
   morningRoutine: Routine;
@@ -127,6 +128,12 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
     const routine = { ...get()[key], ...updates };
     saveRoutine(type, routine);
     set({ [key]: routine });
+
+    // Reschedule routine reminder notifications when target time changes
+    if (updates.targetTime) {
+      const { morningRoutine, nightRoutine } = get();
+      scheduleRoutineReminders(morningRoutine.targetTime, nightRoutine.targetTime);
+    }
   },
 
   markRoutineComplete: (type) => {

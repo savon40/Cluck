@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Cluck",
-    "slug": "cluck",
+    "slug": "locked-in",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -71,6 +71,7 @@
       "eas": {
         "projectId": "1944fbda-c879-4ed0-9857-d71231badfcd"
       }
-    }
+    },
+    "owner": "savon40"
   }
 }

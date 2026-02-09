@@ -3,7 +3,12 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
-import { configureNotifications, requestPermissions } from '@/services/notificationService';
+import {
+  configureNotifications,
+  requestPermissions,
+  clearAllScheduledNotifications,
+  scheduleRoutineReminders,
+} from '@/services/notificationService';
 import { initAppStateListener, removeAppStateListener } from '@/services/appStateService';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 
@@ -12,6 +17,12 @@ export default function RootLayout() {
     configureNotifications();
     requestPermissions();
     initAppStateListener(useRoutineStore.getState);
+
+    // Clear stale notifications from previous sessions, then schedule fresh routine reminders
+    const { morningRoutine, nightRoutine } = useRoutineStore.getState();
+    clearAllScheduledNotifications().then(() => {
+      scheduleRoutineReminders(morningRoutine.targetTime, nightRoutine.targetTime);
+    });
 
     return () => {
       removeAppStateListener();

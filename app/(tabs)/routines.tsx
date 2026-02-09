@@ -1,7 +1,7 @@
 import { View, Text, Pressable, ScrollView, Modal, KeyboardAvoidingView, LayoutAnimation, UIManager, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { Colors } from '@/constants/theme';
 import { getHabitStyle } from '@/components/HabitLibrary';
@@ -167,6 +167,7 @@ export default function RoutinesScreen() {
   const [activeTab, setActiveTab] = useState<RoutineType>('morning');
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   const routine = activeTab === 'morning' ? morningRoutine : nightRoutine;
 
@@ -211,7 +212,7 @@ export default function RoutinesScreen() {
       </View>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Morning/Night Toggle */}
         <View className="mx-6 mt-4 mb-6">
           <View className="flex-row bg-secondary rounded-full p-1">
@@ -287,6 +288,16 @@ export default function RoutinesScreen() {
                 key={habit.id}
                 className="flex-row items-center gap-3 bg-card border border-border p-4 rounded-2xl mb-3"
               >
+                {/* Move up button */}
+                <Pressable
+                  onPress={() => moveHabit(index, 'up')}
+                  className="p-1"
+                  hitSlop={8}
+                  style={{ opacity: index === 0 ? 0.25 : 1 }}
+                >
+                  <Ionicons name="arrow-up" size={20} color={Colors.primary} />
+                </Pressable>
+
                 <View
                   className="w-10 h-10 rounded-full items-center justify-center"
                   style={{ backgroundColor: style.bg }}
@@ -301,41 +312,35 @@ export default function RoutinesScreen() {
                 </View>
 
                 {/* Duration controls */}
-                <View className="flex-row items-center" style={{ gap: 2 }}>
+                <View className="flex-row items-center" style={{ gap: 4 }}>
                   <Pressable
                     onPress={() => updateHabit(activeTab, habit.id, { duration: Math.max((habit.duration ?? 10) - 5, 5) })}
-                    hitSlop={6}
+                    className="p-1.5"
+                    hitSlop={8}
                   >
-                    <Ionicons name="chevron-down" size={14} color={Colors.mutedForeground} />
+                    <Ionicons name="remove-circle-outline" size={20} color={Colors.mutedForeground} />
                   </Pressable>
                   <Text className="text-xs font-semibold text-muted-foreground" style={{ minWidth: 28, textAlign: 'center' }}>
                     {habit.duration ?? 10}m
                   </Text>
                   <Pressable
                     onPress={() => updateHabit(activeTab, habit.id, { duration: Math.min((habit.duration ?? 10) + 5, 120) })}
-                    hitSlop={6}
+                    className="p-1.5"
+                    hitSlop={8}
                   >
-                    <Ionicons name="chevron-up" size={14} color={Colors.mutedForeground} />
+                    <Ionicons name="add-circle-outline" size={20} color={Colors.mutedForeground} />
                   </Pressable>
                 </View>
 
-                {/* Reorder buttons */}
-                <View className="items-center" style={{ gap: 2 }}>
-                  <Pressable
-                    onPress={() => moveHabit(index, 'up')}
-                    hitSlop={6}
-                    style={{ opacity: index === 0 ? 0.25 : 1 }}
-                  >
-                    <Ionicons name="chevron-up" size={16} color={Colors.mutedForeground} />
-                  </Pressable>
-                  <Pressable
-                    onPress={() => moveHabit(index, 'down')}
-                    hitSlop={6}
-                    style={{ opacity: index === routine.habits.length - 1 ? 0.25 : 1 }}
-                  >
-                    <Ionicons name="chevron-down" size={16} color={Colors.mutedForeground} />
-                  </Pressable>
-                </View>
+                {/* Move down button */}
+                <Pressable
+                  onPress={() => moveHabit(index, 'down')}
+                  className="p-1"
+                  hitSlop={8}
+                  style={{ opacity: index === routine.habits.length - 1 ? 0.25 : 1 }}
+                >
+                  <Ionicons name="arrow-down" size={20} color={Colors.primary} />
+                </Pressable>
 
                 <Pressable onPress={() => removeHabit(activeTab, habit.id)} className="p-1">
                   <Ionicons name="close-circle" size={20} color={Colors.border} />
@@ -352,6 +357,9 @@ export default function RoutinesScreen() {
             <HabitLibrary
               existingHabitNames={routine.habits.map((h) => h.name)}
               onAddHabit={handleAddHabit}
+              onCustomInputFocus={() => {
+                setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
+              }}
             />
           </View>
         </CollapsibleSection>
