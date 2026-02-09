@@ -11,6 +11,7 @@ import {
   recordViolation as recordViol,
   getLastActiveDate,
   setLastActiveDate,
+  clearRoutines as clearRoutinesStorage,
 } from './storage';
 import { stopNagging } from '@/services/appStateService';
 import { scheduleRoutineReminders } from '@/services/notificationService';
@@ -36,6 +37,7 @@ interface RoutineStore {
   resetDailyHabits: (type: RoutineType) => void;
   isRoutineComplete: (type: RoutineType) => boolean;
   checkNewDay: () => void;
+  clearRoutines: () => void;
 }
 
 export const useRoutineStore = create<RoutineStore>((set, get) => ({
@@ -169,6 +171,11 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
       setLastActiveDate(today);
     }
 
+    get().loadData();
+  },
+
+  clearRoutines: () => {
+    clearRoutinesStorage();
     get().loadData();
   },
 }));

@@ -2,6 +2,7 @@ import { View, Text, Pressable, ScrollView, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useCallback } from 'react';
+import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import { getSettings, saveSettings } from '@/stores/storage';
 import { useRoutineStore } from '@/stores/useRoutineStore';
@@ -20,7 +21,8 @@ function SectionHeader({ title }: { title: string }) {
 
 export default function SettingsScreen() {
   const [settings, setSettings] = useState(getSettings);
-  const { resetDailyHabits, loadData } = useRoutineStore();
+  const { resetDailyHabits, clearRoutines } = useRoutineStore();
+  const router = useRouter();
 
   const update = useCallback((patch: Partial<Settings>) => {
     const next = { ...settings, ...patch };
@@ -28,16 +30,20 @@ export default function SettingsScreen() {
     saveSettings(next);
   }, [settings]);
 
-  const handleResetOnboarding = () => {
+  const handleResetRoutines = () => {
     Alert.alert(
-      'Reset Onboarding',
-      'This will show the welcome screen on next launch.',
+      'Reset Routines',
+      'This will remove all your routines, habits, and streak data. You\'ll be taken back to the welcome screen.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Reset',
           style: 'destructive',
-          onPress: () => update({ hasCompletedOnboarding: false }),
+          onPress: () => {
+            clearRoutines();
+            update({ hasCompletedOnboarding: false });
+            router.replace('/welcome');
+          },
         },
       ],
     );
@@ -136,18 +142,18 @@ export default function SettingsScreen() {
           </Pressable>
 
           <Pressable
-            onPress={handleResetOnboarding}
+            onPress={handleResetRoutines}
             className="flex-row items-center bg-card rounded-2xl p-4 mb-3 border border-border active:scale-[0.98]"
           >
             <View
               className="w-10 h-10 rounded-xl items-center justify-center mr-3"
-              style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+              style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
             >
-              <Ionicons name="arrow-back-circle" size={20} color="#8B5CF6" />
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
             </View>
             <View className="flex-1">
-              <Text className="text-base font-semibold text-foreground">Reset Onboarding</Text>
-              <Text className="text-xs text-muted-foreground mt-0.5">Show welcome screen again</Text>
+              <Text className="text-base font-semibold text-foreground">Reset Routines</Text>
+              <Text className="text-xs text-muted-foreground mt-0.5">Remove all routines and start fresh</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={Colors.mutedForeground} />
           </Pressable>

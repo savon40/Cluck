@@ -2,6 +2,7 @@ import { View, Text, Pressable, ScrollView, RefreshControl, Image } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'expo-router';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { getTodayCompletion } from '@/stores/storage';
 import { Colors } from '@/constants/theme';
@@ -159,8 +160,10 @@ export default function DashboardScreen() {
     checkNewDay,
   } = useRoutineStore();
 
+  const router = useRouter();
   const [now, setNow] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
+  const hasNoRoutines = morningRoutine.habits.length === 0 && nightRoutine.habits.length === 0;
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -263,6 +266,32 @@ export default function DashboardScreen() {
           />
         }
       >
+        {hasNoRoutines ? (
+          <View className="flex-1 items-center justify-center px-6 pt-20">
+            <Image
+              source={require('@/assets/images/splash-icon.png')}
+              style={{ width: 120, height: 120, opacity: 0.3 }}
+              resizeMode="contain"
+            />
+            <Text className="text-xl font-bold text-foreground mt-6 text-center">
+              No routines yet
+            </Text>
+            <Text className="text-sm text-muted-foreground mt-2 text-center leading-5">
+              Set up your morning and night routines to start building powerful daily habits.
+            </Text>
+            <Pressable
+              onPress={() => router.push('/(tabs)/routines')}
+              className="mt-6 px-6 py-3.5 bg-primary rounded-2xl flex-row items-center active:scale-95"
+              style={{ shadowColor: '#FF6600', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 15 }}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="white" style={{ marginRight: 8 }} />
+              <Text className="text-primary-foreground font-bold text-sm uppercase" style={{ letterSpacing: 1 }}>
+                Create Your Routines
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+        <>
         {/* Routine Type + Countdown + Toggle */}
         {/* Completion banner for the other routine */}
         {otherRoutineComplete && (
@@ -389,6 +418,8 @@ export default function DashboardScreen() {
           </View>
         )}
 
+        </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

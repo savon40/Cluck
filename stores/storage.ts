@@ -26,22 +26,14 @@ function setJSON<T>(key: string, value: T): void {
 
 // Default data
 const DEFAULT_MORNING_ROUTINE: Routine = {
-  habits: [
-    { id: '1', name: 'Gratitude Journal', completed: false, duration: 10 },
-    { id: '2', name: 'Exercise', completed: false, duration: 30 },
-    { id: '3', name: 'Read 10 Pages', completed: false, duration: 20 },
-  ],
+  habits: [],
   targetTime: '6:00 AM',
   notificationAggressiveness: 'medium',
   isActive: true,
 };
 
 const DEFAULT_NIGHT_ROUTINE: Routine = {
-  habits: [
-    { id: '1', name: 'Read', completed: false, duration: 20 },
-    { id: '2', name: 'Pray', completed: false, duration: 10 },
-    { id: '3', name: 'Journal', completed: false, duration: 10 },
-  ],
+  habits: [],
   targetTime: '9:30 PM',
   notificationAggressiveness: 'medium',
   isActive: true,
@@ -128,6 +120,14 @@ export function recordViolation(): void {
   data.completionHistory[today].violations += 1;
 
   saveStreakData(data);
+}
+
+// Clear routines (used by Reset Routines)
+export function clearRoutines(): void {
+  storage.remove(KEYS.MORNING_ROUTINE);
+  storage.remove(KEYS.NIGHT_ROUTINE);
+  storage.remove(KEYS.STREAK_DATA);
+  storage.remove(KEYS.LAST_ACTIVE_DATE);
 }
 
 // Last active date operations
