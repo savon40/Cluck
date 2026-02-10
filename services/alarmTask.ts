@@ -13,7 +13,7 @@ TaskManager.defineTask(ALARM_TASK_NAME, ({ data, error }) => {
   if (notificationData?.type !== 'routine-start') return;
 
   // We can't access zustand store reliably from a background task,
-  // so we read the routineType and selectedAudioId from the notification data
+  // so we read the selectedAudioId from the notification data
   const audioId = notificationData.selectedAudioId as string | undefined;
   if (audioId && AUDIO_REQUIRE_MAP[audioId]) {
     playAlarm(audioId);
