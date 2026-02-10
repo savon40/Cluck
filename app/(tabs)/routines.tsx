@@ -231,6 +231,37 @@ export default function RoutinesScreen() {
           </View>
         </View>
 
+        {routine.habits.length === 0 ? (
+          /* Empty state when no habits exist */
+          <View className="items-center px-6 pt-8 pb-4">
+            <Ionicons
+              name={activeTab === 'morning' ? 'sunny-outline' : 'moon-outline'}
+              size={56}
+              color={Colors.mutedForeground}
+              style={{ opacity: 0.3 }}
+            />
+            <Text className="text-lg font-bold text-foreground mt-4 text-center">
+              No {activeTab === 'morning' ? 'Morning' : 'Night'} Routine Yet
+            </Text>
+            <Text className="text-sm text-muted-foreground mt-2 text-center leading-5 px-4">
+              Add some habits below to build your {activeTab === 'morning' ? 'morning' : 'night'} routine.
+            </Text>
+
+            <View className="w-full mt-6">
+              <Text className="text-xs font-medium text-muted-foreground uppercase mb-3" style={{ letterSpacing: 1 }}>
+                Choose Habits
+              </Text>
+              <HabitLibrary
+                existingHabitNames={[]}
+                onAddHabit={handleAddHabit}
+                onCustomInputFocus={() => {
+                  setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
+                }}
+              />
+            </View>
+          </View>
+        ) : (
+        <>
         {/* Trigger Section */}
         <CollapsibleSection
           title={activeTab === 'morning' ? 'Wake Up Trigger' : 'Wind Down Trigger'}
@@ -396,6 +427,8 @@ export default function RoutinesScreen() {
             })}
           </View>
         </CollapsibleSection>
+        </>
+        )}
         </ScrollView>
       </KeyboardAvoidingView>
 
