@@ -6,6 +6,7 @@ import { useRoutineStore } from '@/stores/useRoutineStore';
 import { Colors } from '@/constants/theme';
 import { getHabitStyle } from '@/components/HabitLibrary';
 import HabitLibrary from '@/components/HabitLibrary';
+import HabitIcon from '@/components/HabitIcon';
 import AudioSelector from '@/components/AudioSelector';
 import type { RoutineType } from '@/types';
 
@@ -286,7 +287,7 @@ export default function RoutinesScreen() {
             return (
               <View
                 key={habit.id}
-                className="flex-row items-center gap-3 bg-card border border-border p-4 rounded-2xl mb-3"
+                className="flex-row items-center gap-2 bg-card border border-border p-3 rounded-2xl mb-3"
               >
                 {/* Move up button */}
                 <Pressable
@@ -302,7 +303,7 @@ export default function RoutinesScreen() {
                   className="w-10 h-10 rounded-full items-center justify-center"
                   style={{ backgroundColor: style.bg }}
                 >
-                  <Ionicons name={iconName as any} size={20} color={style.color} />
+                  <HabitIcon name={iconName} size={20} color={style.color} />
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium text-foreground">{habit.name}</Text>
@@ -312,23 +313,23 @@ export default function RoutinesScreen() {
                 </View>
 
                 {/* Duration controls */}
-                <View className="flex-row items-center" style={{ gap: 4 }}>
+                <View className="flex-row items-center">
                   <Pressable
                     onPress={() => updateHabit(activeTab, habit.id, { duration: Math.max((habit.duration ?? 10) - 5, 5) })}
+                    hitSlop={12}
                     className="p-1.5"
-                    hitSlop={8}
                   >
-                    <Ionicons name="remove-circle-outline" size={20} color={Colors.mutedForeground} />
+                    <Ionicons name="remove-circle-outline" size={22} color={Colors.mutedForeground} />
                   </Pressable>
                   <Text className="text-xs font-semibold text-muted-foreground" style={{ minWidth: 28, textAlign: 'center' }}>
                     {habit.duration ?? 10}m
                   </Text>
                   <Pressable
                     onPress={() => updateHabit(activeTab, habit.id, { duration: Math.min((habit.duration ?? 10) + 5, 120) })}
+                    hitSlop={12}
                     className="p-1.5"
-                    hitSlop={8}
                   >
-                    <Ionicons name="add-circle-outline" size={20} color={Colors.mutedForeground} />
+                    <Ionicons name="add-circle-outline" size={22} color={Colors.mutedForeground} />
                   </Pressable>
                 </View>
 

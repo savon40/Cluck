@@ -8,6 +8,7 @@ import { getTodayCompletion } from '@/stores/storage';
 import { Colors } from '@/constants/theme';
 import { ProgressRing } from '@/components/ProgressRing';
 import { getHabitStyle } from '@/components/HabitLibrary';
+import HabitIcon from '@/components/HabitIcon';
 import { parseTargetTime, getActiveRoutineType } from '@/utils/routineHelpers';
 import type { Habit, RoutineType } from '@/types';
 
@@ -34,7 +35,13 @@ function getRoutineStatus(
   const target = new Date();
   target.setHours(hours24, minutes, 0, 0);
 
-  const diffMs = target.getTime() - now.getTime();
+  let diffMs = target.getTime() - now.getTime();
+
+  // If the target passed more than 12 hours ago, it's clearly for tomorrow
+  if (diffMs <= 0 && -diffMs > 12 * 60 * 60 * 1000) {
+    target.setDate(target.getDate() + 1);
+    diffMs = target.getTime() - now.getTime();
+  }
 
   if (diffMs <= 0) {
     // Target time has passed today → overdue
@@ -89,7 +96,7 @@ function HabitItem({
           className="w-8 h-8 rounded-full items-center justify-center"
           style={{ backgroundColor: style.bg }}
         >
-          <Ionicons name={iconName as any} size={16} color={style.color} />
+          <HabitIcon name={iconName} size={16} color={style.color} />
         </View>
       </Pressable>
     );
@@ -123,7 +130,7 @@ function HabitItem({
           className="w-9 h-9 rounded-full items-center justify-center"
           style={{ backgroundColor: style.bg }}
         >
-          <Ionicons name={iconName as any} size={18} color={style.color} />
+          <HabitIcon name={iconName} size={18} color={style.color} />
         </View>
       </Pressable>
     );
@@ -142,7 +149,7 @@ function HabitItem({
         className="w-8 h-8 rounded-full items-center justify-center"
         style={{ backgroundColor: style.bg }}
       >
-        <Ionicons name={iconName as any} size={16} color={style.color} />
+        <HabitIcon name={iconName} size={16} color={style.color} />
       </View>
     </Pressable>
   );
