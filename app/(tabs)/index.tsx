@@ -169,7 +169,8 @@ export default function DashboardScreen() {
     setRefreshing(true);
     checkNewDay();
     setNow(new Date());
-    setRefreshing(false);
+    // Delay setting refreshing to false so React doesn't batch it away with the true
+    setTimeout(() => setRefreshing(false), 300);
   }, [checkNewDay]);
 
   // Tick every 30s to keep countdown fresh
@@ -204,11 +205,8 @@ export default function DashboardScreen() {
     ? todayCompletion.morningCompletedAt
     : todayCompletion.nightCompletedAt;
 
-  // Smart status: overdue / starts in / complete
-  const routineStatus = useMemo(
-    () => getRoutineStatus(routine.targetTime, isComplete, routineCompletedAt),
-    [routine.targetTime, isComplete, routineCompletedAt, now]
-  );
+  // Smart status: overdue / starts in / complete (recomputes on every render including refresh)
+  const routineStatus = getRoutineStatus(routine.targetTime, isComplete, routineCompletedAt);
 
   // Check if the OTHER routine is complete today
   const otherRoutineComplete = routineType === 'morning'

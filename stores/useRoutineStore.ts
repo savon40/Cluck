@@ -123,6 +123,15 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
     const routine = { ...get()[key], selectedAudioId: audioId };
     saveRoutine(type, routine);
     set({ [key]: routine });
+
+    // Reschedule notifications so the alarm audio ID is embedded in the notification data
+    const { morningRoutine, nightRoutine } = get();
+    scheduleRoutineReminders(
+      morningRoutine.targetTime,
+      nightRoutine.targetTime,
+      morningRoutine.selectedAudioId,
+      nightRoutine.selectedAudioId,
+    );
   },
 
   updateRoutine: (type, updates) => {
@@ -131,10 +140,15 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
     saveRoutine(type, routine);
     set({ [key]: routine });
 
-    // Reschedule routine reminder notifications when target time changes
-    if (updates.targetTime) {
+    // Reschedule routine reminder notifications when target time or audio changes
+    if (updates.targetTime || updates.selectedAudioId !== undefined) {
       const { morningRoutine, nightRoutine } = get();
-      scheduleRoutineReminders(morningRoutine.targetTime, nightRoutine.targetTime);
+      scheduleRoutineReminders(
+        morningRoutine.targetTime,
+        nightRoutine.targetTime,
+        morningRoutine.selectedAudioId,
+        nightRoutine.selectedAudioId,
+      );
     }
   },
 

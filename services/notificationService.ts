@@ -101,7 +101,12 @@ async function cancelRoutineReminders(): Promise<void> {
 }
 
 /** Schedule daily routine reminder notifications (5-min warning + start) for both routines. */
-export async function scheduleRoutineReminders(morningTime: string, nightTime: string): Promise<void> {
+export async function scheduleRoutineReminders(
+  morningTime: string,
+  nightTime: string,
+  morningAudioId?: string,
+  nightAudioId?: string,
+): Promise<void> {
   await cancelRoutineReminders();
 
   const morning = parseTargetTime(morningTime);
@@ -129,6 +134,7 @@ export async function scheduleRoutineReminders(morningTime: string, nightTime: s
       title: 'Cluck',
       body: 'It is time to begin your morning routine',
       sound: 'rooster.wav',
+      data: { type: 'routine-start', routineType: 'morning', selectedAudioId: morningAudioId },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
@@ -160,6 +166,7 @@ export async function scheduleRoutineReminders(morningTime: string, nightTime: s
       title: 'Cluck',
       body: 'It is time to begin your night routine',
       sound: 'rooster.wav',
+      data: { type: 'routine-start', routineType: 'night', selectedAudioId: nightAudioId },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
