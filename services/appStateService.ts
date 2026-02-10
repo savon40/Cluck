@@ -4,7 +4,7 @@ import {
   cancelAllNags,
   getIntervalForAggressiveness,
 } from './notificationService';
-import { getActiveRoutineType, isWithinRoutineWindow } from '@/utils/routineHelpers';
+import { getActiveRoutineType, isWithinRoutineWindow, getMinutesUntilNagCutoff } from '@/utils/routineHelpers';
 import type { Routine } from '@/types';
 
 interface StoreState {
@@ -19,6 +19,9 @@ type GetStoreState = () => StoreState;
 let subscription: NativeEventSubscription | null = null;
 let getStore: GetStoreState | null = null;
 
+const MAX_SCHEDULED_NAGS = 30;
+const NAG_CUTOFF_MINUTES = 120; // Stop nagging 2 hours after routine start
+
 function shouldStartNagging(): boolean {
   if (!getStore) return false;
 
@@ -29,11 +32,10 @@ function shouldStartNagging(): boolean {
   if (!routine.isActive) return false;
   if (routine.habits.every((h) => h.completed)) return false;
   if (!isWithinRoutineWindow(routine.targetTime, 120)) return false;
+  if (getMinutesUntilNagCutoff(routine.targetTime, NAG_CUTOFF_MINUTES) === 0) return false;
 
   return true;
 }
-
-const MAX_SCHEDULED_NAGS = 30;
 
 function startNagging(): void {
   stopNagging();
@@ -46,8 +48,11 @@ function startNagging(): void {
   const intervalMs = getIntervalForAggressiveness(routine.notificationAggressiveness);
   const intervalSeconds = Math.round(intervalMs / 1000);
 
-  // Pre-schedule multiple notifications so they fire even while backgrounded
-  for (let i = 1; i <= MAX_SCHEDULED_NAGS; i++) {
+  // Cap nags so they don't fire past 2 hours after routine start
+  const remainingSeconds = getMinutesUntilNagCutoff(routine.targetTime, NAG_CUTOFF_MINUTES) * 60;
+  const maxNags = Math.min(MAX_SCHEDULED_NAGS, Math.floor(remainingSeconds / intervalSeconds));
+
+  for (let i = 1; i <= maxNags; i++) {
     scheduleNagNotification(intervalSeconds * i);
   }
 }

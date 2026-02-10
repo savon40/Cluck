@@ -40,6 +40,27 @@ export function getActiveRoutineType(
   return distToMorning <= distToNight ? 'morning' : 'night';
 }
 
+/**
+ * Returns how many minutes remain until `cutoffMinutes` after the routine start time.
+ * Returns 0 if the cutoff has already passed.
+ * Handles midnight wraparound (e.g. 11 PM routine with 1 AM cutoff).
+ */
+export function getMinutesUntilNagCutoff(targetTime: string, cutoffMinutes: number): number {
+  const now = new Date();
+  const currentMins = now.getHours() * 60 + now.getMinutes();
+  const { hours24, minutes } = parseTargetTime(targetTime);
+  const targetMins = hours24 * 60 + minutes;
+  const cutoffMins = (targetMins + cutoffMinutes) % 1440;
+
+  // Forward distance from now to the cutoff
+  const remaining = ((cutoffMins - currentMins) + 1440) % 1440;
+
+  // If remaining wraps past 12 hours, we've already passed the cutoff
+  if (remaining > 720) return 0;
+
+  return remaining;
+}
+
 /** Check whether the current time is within `windowMinutes` of the target time. */
 export function isWithinRoutineWindow(targetTime: string, windowMinutes: number): boolean {
   const now = new Date();

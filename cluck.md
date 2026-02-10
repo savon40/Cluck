@@ -311,4 +311,11 @@ there is a folder a directory up called sampleHTMLs, which contains HTML files a
 
 ---
 
+## Audio
+
+https://audiojungle.net/search/motivational%20speech
+https://pixabay.com/sound-effects/search/motivation/
+https://www.fearlessmotivation.com/youtube-free-music-motivational-speeches-videos/
+https://elevenlabs.io/iconic-marketplace
+
 **This is an MVP-focused build. Ship fast, get feedback, iterate.**
