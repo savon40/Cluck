@@ -10,6 +10,7 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { getHabitStyle } from '@/components/HabitLibrary';
 import HabitIcon from '@/components/HabitIcon';
 import { parseTargetTime, getActiveRoutineType } from '@/utils/routineHelpers';
+import { isAlarmPlaying, stopAlarm } from '@/services/audioService';
 import type { Habit, RoutineType } from '@/types';
 
 // --- Helpers ---
@@ -170,6 +171,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const [now, setNow] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
+  const [alarmActive, setAlarmActive] = useState(isAlarmPlaying());
   const hasNoRoutines = morningRoutine.habits.length === 0 && nightRoutine.habits.length === 0;
 
   const onRefresh = useCallback(() => {
@@ -183,6 +185,12 @@ export default function DashboardScreen() {
   // Tick every 30s to keep countdown fresh
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Poll alarm state so the stop button appears/disappears
+  useEffect(() => {
+    const interval = setInterval(() => setAlarmActive(isAlarmPlaying()), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -236,6 +244,11 @@ export default function DashboardScreen() {
     updateRoutine(routineType, { isActive: !routine.isActive });
   };
 
+  const handleStopAlarm = async () => {
+    await stopAlarm();
+    setAlarmActive(false);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Header */}
@@ -258,6 +271,20 @@ export default function DashboardScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Stop Alarm Banner */}
+      {alarmActive && (
+        <Pressable
+          onPress={handleStopAlarm}
+          className="mx-6 mt-3 mb-1 flex-row items-center justify-center py-3 rounded-2xl"
+          style={{ backgroundColor: '#D94040' }}
+        >
+          <Ionicons name="volume-mute" size={20} color="#fff" style={{ marginRight: 8 }} />
+          <Text className="font-bold text-sm" style={{ color: '#fff' }}>
+            Stop Alarm
+          </Text>
+        </Pressable>
+      )}
 
       <ScrollView
         className="flex-1"

@@ -15,9 +15,6 @@
         "UIBackgroundModes": [
           "fetch",
           "remote-notification",
-          "audio",
-          "fetch",
-          "remote-notification",
           "audio"
         ],
         "ITSAppUsesNonExemptEncryption": false
@@ -50,7 +47,9 @@
         {
           "icon": "./assets/images/icon.png",
           "color": "#FF6B00",
-          "sounds": ["./assets/audio/rooster.wav"]
+          "sounds": [
+            "./assets/audio/rooster.wav"
+          ]
         }
       ],
       [
@@ -61,7 +60,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#FFF5ED"
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,

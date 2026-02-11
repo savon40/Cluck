@@ -1,4 +1,4 @@
-import { Audio, type AVPlaybackSource } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer, type AudioSource } from 'expo-audio';
 
 export interface BundledClip {
   id: string;
@@ -14,23 +14,16 @@ export const BUNDLED_AUDIO_CLIPS: BundledClip[] = [
   { id: 'percussion-hype', name: 'Percussion Hype', duration: 5, icon: 'musical-note' },
 ];
 
-export const AUDIO_REQUIRE_MAP: Record<string, AVPlaybackSource> = {
+export const AUDIO_REQUIRE_MAP: Record<string, AudioSource> = {
   'energetic-beat': require('@/assets/audio/energetic-beat.wav'),
   'calypso-ukelele': require('@/assets/audio/calypso_ukelele.mp3'),
   'cinematic-stomps': require('@/assets/audio/cinematic_stomps.mp3'),
   'percussion-hype': require('@/assets/audio/percussion_hype.mp3'),
 };
 
-let currentSound: Audio.Sound | null = null;
+let previewPlayer: AudioPlayer | null = null;
 let currentClipId: string | null = null;
-let alarmSound: Audio.Sound | null = null;
-
-async function ensureAudioMode() {
-  await Audio.setAudioModeAsync({
-    playsInSilentModeIOS: true,
-    staysActiveInBackground: false,
-  });
-}
+let alarmPlayer: AudioPlayer | null = null;
 
 /** Play the selected alarm audio on loop. Plays in silent mode and continues in background. */
 export async function playAlarm(clipId: string): Promise<boolean> {
@@ -41,17 +34,16 @@ export async function playAlarm(clipId: string): Promise<boolean> {
   if (!source) return false;
 
   try {
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: true,
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
     });
 
-    const { sound } = await Audio.Sound.createAsync(source, {
-      shouldPlay: true,
-      volume: 1.0,
-      isLooping: true,
-    });
-    alarmSound = sound;
+    const player = createAudioPlayer(source);
+    player.loop = true;
+    player.volume = 1.0;
+    player.play();
+    alarmPlayer = player;
 
     return true;
   } catch {
@@ -61,19 +53,20 @@ export async function playAlarm(clipId: string): Promise<boolean> {
 
 /** Stop the looping alarm. */
 export async function stopAlarm(): Promise<void> {
-  if (alarmSound) {
+  if (alarmPlayer) {
     try {
-      await alarmSound.unloadAsync();
+      alarmPlayer.pause();
+      alarmPlayer.release();
     } catch {
-      // already unloaded
+      // already released
     }
-    alarmSound = null;
+    alarmPlayer = null;
   }
 }
 
 /** Returns true if the alarm is currently playing. */
 export function isAlarmPlaying(): boolean {
-  return alarmSound !== null;
+  return alarmPlayer !== null;
 }
 
 export async function playPreview(clipId: string): Promise<boolean> {
@@ -83,33 +76,40 @@ export async function playPreview(clipId: string): Promise<boolean> {
   if (!source) return false;
 
   try {
-    await ensureAudioMode();
-    const { sound } = await Audio.Sound.createAsync(source, { shouldPlay: true });
-    currentSound = sound;
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+    });
+
+    const player = createAudioPlayer(source);
+    player.play();
+    previewPlayer = player;
     currentClipId = clipId;
 
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) {
+    // Stop when playback finishes
+    player.addListener('playbackStatusUpdate', (status) => {
+      if (status.didJustFinish && player === previewPlayer) {
         stopPreview();
       }
     });
 
     return true;
   } catch {
-    currentSound = null;
+    previewPlayer = null;
     currentClipId = null;
     return false;
   }
 }
 
 export async function stopPreview(): Promise<void> {
-  if (currentSound) {
+  if (previewPlayer) {
     try {
-      await currentSound.unloadAsync();
+      previewPlayer.pause();
+      previewPlayer.release();
     } catch {
-      // already unloaded
+      // already released
     }
-    currentSound = null;
+    previewPlayer = null;
     currentClipId = null;
   }
 }

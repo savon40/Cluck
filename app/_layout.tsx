@@ -12,6 +12,7 @@ import {
 } from '@/services/notificationService';
 import { initAppStateListener, removeAppStateListener } from '@/services/appStateService';
 import { playAlarm, stopAlarm } from '@/services/audioService';
+import { disarmAlarm } from '@/services/backgroundAlarmService';
 import { registerAlarmTask } from '@/services/alarmTask';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 
@@ -32,7 +33,8 @@ export default function RootLayout() {
     registerAlarmTask();
     initAppStateListener(useRoutineStore.getState);
 
-    // Stop any alarm that was playing when the app opens
+    // Stop silent background audio keeper and any playing alarm
+    disarmAlarm();
     stopAlarm();
 
     // Clear stale notifications from previous sessions, then schedule fresh routine reminders

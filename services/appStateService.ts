@@ -4,7 +4,8 @@ import {
   cancelAllNags,
   getIntervalForAggressiveness,
 } from './notificationService';
-import { getActiveRoutineType, isWithinRoutineWindow, getMinutesUntilNagCutoff } from '@/utils/routineHelpers';
+import { getActiveRoutineType, isWithinRoutineWindow, getMinutesUntilNagCutoff, parseTargetTime } from '@/utils/routineHelpers';
+import { armAlarm, disarmAlarm } from './backgroundAlarmService';
 import type { Routine } from '@/types';
 
 interface StoreState {
@@ -61,11 +62,45 @@ export function stopNagging(): void {
   cancelAllNags();
 }
 
+function armNextRoutineAlarm(): void {
+  if (!getStore) return;
+  const { morningRoutine, nightRoutine } = getStore();
+
+  const now = new Date();
+  const currentMins = now.getHours() * 60 + now.getMinutes();
+
+  const morningParsed = parseTargetTime(morningRoutine.targetTime);
+  const nightParsed = parseTargetTime(nightRoutine.targetTime);
+  const morningMins = morningParsed.hours24 * 60 + morningParsed.minutes;
+  const nightMins = nightParsed.hours24 * 60 + nightParsed.minutes;
+
+  // Forward distance in minutes to each routine
+  const morningDist = ((morningMins - currentMins) + 1440) % 1440;
+  const nightDist = ((nightMins - currentMins) + 1440) % 1440;
+
+  // Build candidates: must have habits, an audio selection, and be in the future (dist > 1)
+  const candidates: { dist: number; time: string; audioId: string }[] = [];
+  if (morningRoutine.habits.length > 0 && morningRoutine.selectedAudioId && morningDist > 1) {
+    candidates.push({ dist: morningDist, time: morningRoutine.targetTime, audioId: morningRoutine.selectedAudioId });
+  }
+  if (nightRoutine.habits.length > 0 && nightRoutine.selectedAudioId && nightDist > 1) {
+    candidates.push({ dist: nightDist, time: nightRoutine.targetTime, audioId: nightRoutine.selectedAudioId });
+  }
+
+  if (candidates.length === 0) return;
+
+  // Arm for the nearest upcoming routine
+  candidates.sort((a, b) => a.dist - b.dist);
+  armAlarm(candidates[0].time, candidates[0].audioId);
+}
+
 function handleAppStateChange(nextState: AppStateStatus): void {
   if (nextState === 'background' || nextState === 'inactive') {
     startNagging();
+    armNextRoutineAlarm();
   } else if (nextState === 'active') {
     stopNagging();
+    disarmAlarm();
     if (getStore) {
       getStore().checkNewDay();
     }
