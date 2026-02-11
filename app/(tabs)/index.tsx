@@ -324,7 +324,6 @@ export default function DashboardScreen() {
           </View>
         ) : (
         <>
-        {/* Routine Type + Countdown + Toggle */}
         {/* Completion banner for the other routine */}
         {otherRoutineComplete && (
           <View className="mx-6 mt-4 mb-1 flex-row items-center self-start px-3 py-1.5 rounded-full"
@@ -337,6 +336,34 @@ export default function DashboardScreen() {
           </View>
         )}
 
+        {routine.habits.length === 0 ? (
+          <View className="flex-1 items-center justify-center px-6 pt-20">
+            <Ionicons
+              name={routineType === 'morning' ? 'sunny-outline' : 'moon-outline'}
+              size={64}
+              color={Colors.mutedForeground}
+              style={{ opacity: 0.3 }}
+            />
+            <Text className="text-xl font-bold text-foreground mt-6 text-center">
+              No {routineType === 'morning' ? 'morning' : 'night'} routine yet
+            </Text>
+            <Text className="text-sm text-muted-foreground mt-2 text-center leading-5">
+              Set up your {routineType === 'morning' ? 'morning' : 'night'} routine to start building daily habits.
+            </Text>
+            <Pressable
+              onPress={() => router.push('/(tabs)/routines')}
+              className="mt-6 px-6 py-3.5 bg-primary rounded-2xl flex-row items-center active:scale-95"
+              style={{ shadowColor: '#FF6600', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 15 }}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="white" style={{ marginRight: 8 }} />
+              <Text className="text-primary-foreground font-bold text-sm uppercase" style={{ letterSpacing: 1 }}>
+                Set Up Routine
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+        <>
+        {/* Routine Type + Countdown + Toggle */}
         <View className="flex-row items-center justify-between px-6 pt-5 pb-2">
           <View>
             <Text className="text-xs font-bold text-muted-foreground uppercase" style={{ letterSpacing: 2 }}>
@@ -448,6 +475,8 @@ export default function DashboardScreen() {
               <Text className="text-primary-foreground text-sm font-semibold">Turn On</Text>
             </Pressable>
           </View>
+        )}
+        </>
         )}
 
         </>
