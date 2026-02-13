@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Alert, Image } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useCallback } from 'react';
@@ -171,6 +171,43 @@ export default function SettingsScreen() {
               <Text className="text-xs text-muted-foreground mt-0.5">Version 1.0.0</Text>
             </View>
           </View>
+        </View>
+
+        {/* Legal */}
+        <View className="px-6 mb-8">
+          <SectionHeader title="Legal" />
+
+          <Pressable
+            onPress={() => Linking.openURL('https://savon40.github.io/Cluck/privacy.html')}
+            className="flex-row items-center bg-card rounded-2xl p-4 mb-3 border border-border active:scale-[0.98]"
+          >
+            <View
+              className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+              style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
+            >
+              <Ionicons name="shield-checkmark-outline" size={20} color="#3B82F6" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-foreground">Privacy Policy</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color={Colors.mutedForeground} />
+          </Pressable>
+
+          <Pressable
+            onPress={() => Linking.openURL('https://savon40.github.io/Cluck/support.html')}
+            className="flex-row items-center bg-card rounded-2xl p-4 border border-border active:scale-[0.98]"
+          >
+            <View
+              className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+              style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }}
+            >
+              <Ionicons name="help-circle-outline" size={20} color="#22C55E" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-foreground">Support</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color={Colors.mutedForeground} />
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
