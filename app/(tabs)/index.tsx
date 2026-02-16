@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, RefreshControl, Image } from 'react-native';
+import { View, Text, Pressable, ScrollView, RefreshControl, Image, AppState } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -188,14 +188,27 @@ export default function DashboardScreen() {
     return () => clearInterval(interval);
   }, []);
 
+  // Refresh immediately when app returns to foreground (interval is suspended in background)
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        checkNewDay();
+        setNow(new Date());
+      }
+    });
+    return () => sub.remove();
+  }, [checkNewDay]);
+
   // Poll alarm state so the stop button appears/disappears
   useEffect(() => {
     const interval = setInterval(() => setAlarmActive(isAlarmPlaying()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Get today's completion state from storage (re-evaluated on streakData changes)
-  const todayCompletion = useMemo(() => getTodayCompletion(), [streakData]);
+  // Get today's completion state from storage
+  // Depends on streakData (changes when routines completed) AND todayKey (changes at midnight)
+  const todayKey = now.toISOString().split('T')[0];
+  const todayCompletion = useMemo(() => getTodayCompletion(), [streakData, todayKey]);
 
   // Auto-detect which routine based on current time + completion
   const routineType = useMemo(
