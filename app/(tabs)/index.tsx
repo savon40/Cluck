@@ -10,7 +10,7 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { getHabitStyle } from '@/components/HabitLibrary';
 import HabitIcon from '@/components/HabitIcon';
 import { parseTargetTime, getActiveRoutineType } from '@/utils/routineHelpers';
-import { isAlarmPlaying, stopAlarm } from '@/services/audioService';
+import { isAlarmPlaying, stopAlarm, BUNDLED_AUDIO_CLIPS } from '@/services/audioService';
 import type { Habit, RoutineType } from '@/types';
 
 // --- Helpers ---
@@ -156,6 +156,16 @@ function HabitItem({
   );
 }
 
+function getAlarmName(audioId?: string): string {
+  if (!audioId) return 'Default';
+  const clip = BUNDLED_AUDIO_CLIPS.find((c) => c.id === audioId);
+  return clip?.name ?? 'Default';
+}
+
+function capitalizeFirst(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 // --- Main screen ---
 
 export default function DashboardScreen() {
@@ -210,15 +220,14 @@ export default function DashboardScreen() {
   const todayKey = now.toISOString().split('T')[0];
   const todayCompletion = useMemo(() => getTodayCompletion(), [streakData, todayKey]);
 
-  // Auto-detect which routine based on current time + completion
-  const routineType = useMemo(
+  // Manual toggle with smart default
+  const [routineType, setRoutineType] = useState<RoutineType>(
     () => getActiveRoutineType(
       morningRoutine.targetTime,
       nightRoutine.targetTime,
       todayCompletion.morning,
       todayCompletion.night,
-    ),
-    [morningRoutine.targetTime, nightRoutine.targetTime, todayCompletion, now]
+    )
   );
 
   const routine = routineType === 'morning' ? morningRoutine : nightRoutine;
@@ -337,9 +346,55 @@ export default function DashboardScreen() {
           </View>
         ) : (
         <>
+        {/* Morning / Night Toggle */}
+        <View className="mx-6 mt-4 mb-3">
+          <View className="flex-row bg-secondary rounded-full p-1">
+            {(['morning', 'night'] as RoutineType[]).map((tab) => (
+              <Pressable
+                key={tab}
+                onPress={() => setRoutineType(tab)}
+                className={`flex-1 py-3 rounded-full items-center ${routineType === tab ? 'bg-primary' : ''}`}
+              >
+                <Text className={`font-semibold text-sm capitalize ${routineType === tab ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+                  {tab}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {/* Routine Info Summary */}
+        <Pressable
+          onPress={() => router.push('/(tabs)/routines')}
+          className="mx-6 mb-3 flex-row items-center bg-card border border-border rounded-2xl px-4 py-3"
+          style={{ gap: 12 }}
+        >
+          <View className="flex-row items-center flex-1" style={{ gap: 12 }}>
+            <View className="flex-row items-center" style={{ gap: 4 }}>
+              <Ionicons name="alarm-outline" size={14} color={Colors.mutedForeground} />
+              <Text className="text-xs font-medium text-muted-foreground">
+                {routine.targetTime}
+              </Text>
+            </View>
+            <View className="flex-row items-center" style={{ gap: 4 }}>
+              <Ionicons name="musical-note-outline" size={14} color={Colors.mutedForeground} />
+              <Text className="text-xs font-medium text-muted-foreground">
+                {getAlarmName(routine.selectedAudioId)}
+              </Text>
+            </View>
+            <View className="flex-row items-center" style={{ gap: 4 }}>
+              <Ionicons name="notifications-outline" size={14} color={Colors.mutedForeground} />
+              <Text className="text-xs font-medium text-muted-foreground">
+                {capitalizeFirst(routine.notificationAggressiveness)}
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={14} color={Colors.mutedForeground} />
+        </Pressable>
+
         {/* Completion banner for the other routine */}
         {otherRoutineComplete && (
-          <View className="mx-6 mt-4 mb-1 flex-row items-center self-start px-3 py-1.5 rounded-full"
+          <View className="mx-6 mb-1 flex-row items-center self-start px-3 py-1.5 rounded-full"
             style={{ backgroundColor: 'rgba(52, 199, 89, 0.1)', borderWidth: 1, borderColor: 'rgba(52, 199, 89, 0.2)' }}
           >
             <Ionicons name="checkmark-circle" size={14} color={Colors.success} />

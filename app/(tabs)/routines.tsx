@@ -262,50 +262,6 @@ export default function RoutinesScreen() {
           </View>
         ) : (
         <>
-        {/* Trigger Section */}
-        <CollapsibleSection
-          title={activeTab === 'morning' ? 'Wake Up Trigger' : 'Wind Down Trigger'}
-          rightLabel="Active"
-          defaultOpen
-        >
-          <View
-            className="bg-card border border-border rounded-3xl p-6"
-            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 }}
-          >
-            {/* Time Display — tap to edit */}
-            <Pressable className="items-center py-4" onPress={() => {
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-              setShowTimePicker((v) => !v);
-            }}>
-              <Text className="text-foreground font-bold" style={{ fontSize: 56, letterSpacing: -2 }}>
-                {routine.targetTime.split(' ')[0]}
-                <Text className="text-xl font-medium text-muted-foreground"> {routine.targetTime.split(' ')[1]}</Text>
-              </Text>
-              <Text className="text-sm mt-2" style={{ color: Colors.primary }}>
-                {showTimePicker ? 'Tap to close' : 'Tap to change'}
-              </Text>
-            </Pressable>
-
-            {/* Inline Time Picker */}
-            {showTimePicker && (
-              <View className="py-4">
-                <TimePicker value={routine.targetTime} onChange={handleTimeChange} />
-              </View>
-            )}
-
-            {/* Audio Selector */}
-            <View className="mt-4">
-              <Text className="text-xs font-medium text-muted-foreground uppercase mb-3" style={{ letterSpacing: 1 }}>
-                Alarm Sound
-              </Text>
-              <AudioSelector
-                selectedAudioId={routine.selectedAudioId}
-                onSelect={(audioId) => selectAudio(activeTab, audioId)}
-              />
-            </View>
-          </View>
-        </CollapsibleSection>
-
         {/* Habit Stack */}
         <CollapsibleSection
           title="Habit Stack"
@@ -393,6 +349,50 @@ export default function RoutinesScreen() {
                 setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
               }}
             />
+          </View>
+        </CollapsibleSection>
+
+        {/* Trigger Section */}
+        <CollapsibleSection
+          title={activeTab === 'morning' ? 'Wake Up Trigger' : 'Wind Down Trigger'}
+          rightLabel="Active"
+          defaultOpen
+        >
+          <View
+            className="bg-card border border-border rounded-3xl p-6"
+            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 }}
+          >
+            {/* Time Display — tap to edit */}
+            <Pressable className="items-center py-4" onPress={() => {
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              setShowTimePicker((v) => !v);
+            }}>
+              <Text className="text-foreground font-bold" style={{ fontSize: 56, letterSpacing: -2 }}>
+                {routine.targetTime.split(' ')[0]}
+                <Text className="text-xl font-medium text-muted-foreground"> {routine.targetTime.split(' ')[1]}</Text>
+              </Text>
+              <Text className="text-sm mt-2" style={{ color: Colors.primary }}>
+                {showTimePicker ? 'Tap to close' : 'Tap to change'}
+              </Text>
+            </Pressable>
+
+            {/* Inline Time Picker */}
+            {showTimePicker && (
+              <View className="py-4">
+                <TimePicker value={routine.targetTime} onChange={handleTimeChange} />
+              </View>
+            )}
+
+            {/* Audio Selector */}
+            <View className="mt-4">
+              <Text className="text-xs font-medium text-muted-foreground uppercase mb-3" style={{ letterSpacing: 1 }}>
+                Alarm Sound
+              </Text>
+              <AudioSelector
+                selectedAudioId={routine.selectedAudioId}
+                onSelect={(audioId) => selectAudio(activeTab, audioId)}
+              />
+            </View>
           </View>
         </CollapsibleSection>
 
