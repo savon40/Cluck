@@ -6,6 +6,7 @@ import {
 } from './notificationService';
 import { getActiveRoutineType, isWithinRoutineWindow, getMinutesUntilNagCutoff, parseTargetTime } from '@/utils/routineHelpers';
 import { armAlarm, disarmAlarm } from './backgroundAlarmService';
+import { isAlarmPlaying, ensureAlarmAudible } from './audioService';
 import type { Routine } from '@/types';
 
 interface StoreState {
@@ -101,6 +102,11 @@ function handleAppStateChange(nextState: AppStateStatus): void {
   } else if (nextState === 'active') {
     stopNagging();
     disarmAlarm();
+    // iOS can't start audio from background tasks — the player may exist but
+    // produce no sound. Re-trigger playback now that we're in the foreground.
+    if (isAlarmPlaying()) {
+      ensureAlarmAudible();
+    }
     if (getStore) {
       getStore().checkNewDay();
     }

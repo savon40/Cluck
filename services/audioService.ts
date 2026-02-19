@@ -24,6 +24,7 @@ export const AUDIO_REQUIRE_MAP: Record<string, AudioSource> = {
 let previewPlayer: AudioPlayer | null = null;
 let currentClipId: string | null = null;
 let alarmPlayer: AudioPlayer | null = null;
+let alarmClipId: string | null = null;
 
 /** Play the selected alarm audio on loop. Plays in silent mode and continues in background. */
 export async function playAlarm(clipId: string): Promise<boolean> {
@@ -44,6 +45,7 @@ export async function playAlarm(clipId: string): Promise<boolean> {
     player.volume = 1.0;
     player.play();
     alarmPlayer = player;
+    alarmClipId = clipId;
 
     return true;
   } catch {
@@ -61,12 +63,30 @@ export async function stopAlarm(): Promise<void> {
       // already released
     }
     alarmPlayer = null;
+    alarmClipId = null;
   }
 }
 
 /** Returns true if the alarm is currently playing. */
 export function isAlarmPlaying(): boolean {
   return alarmPlayer !== null;
+}
+
+/** Returns the clip ID of the active alarm, or null if no alarm is set. */
+export function getAlarmClipId(): string | null {
+  return alarmClipId;
+}
+
+/**
+ * Re-trigger alarm playback in the foreground. iOS can't START audio from
+ * background tasks, so the player may exist but produce no sound. Call this
+ * when the app returns to foreground to re-create the player with an active
+ * audio session.
+ */
+export async function ensureAlarmAudible(): Promise<void> {
+  if (!alarmClipId) return;
+  // Re-play with the same clip — playAlarm releases the stale player first
+  await playAlarm(alarmClipId);
 }
 
 export async function playPreview(clipId: string): Promise<boolean> {

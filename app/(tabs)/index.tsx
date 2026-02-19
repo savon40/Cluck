@@ -23,6 +23,7 @@ function formatCompletionTime(isoString: string): string {
 function getRoutineStatus(
   targetTime: string,
   isComplete: boolean,
+  now: Date,
   completedAt?: string,
 ): { text: string; color: string } {
   if (isComplete) {
@@ -30,10 +31,9 @@ function getRoutineStatus(
     return { text: `Complete${timeStr}`, color: Colors.success };
   }
 
-  const now = new Date();
   const { hours24, minutes } = parseTargetTime(targetTime);
 
-  const target = new Date();
+  const target = new Date(now);
   target.setHours(hours24, minutes, 0, 0);
 
   let diffMs = target.getTime() - now.getTime();
@@ -85,9 +85,12 @@ function HabitItem({
         <View className="mr-4">
           <Ionicons name="checkmark-circle" size={24} color={Colors.success} />
         </View>
-        <Text className="text-base font-medium text-muted-foreground line-through flex-1">
-          {habit.name}
-        </Text>
+        <View className="flex-1">
+          <Text className="text-base font-medium text-muted-foreground line-through">
+            {habit.name}
+          </Text>
+          <Text className="text-xs text-muted-foreground mt-0.5">{habit.duration ?? 10} min</Text>
+        </View>
         {habit.completedAt && (
           <Text className="text-xs font-medium mr-2" style={{ color: Colors.success }}>
             {formatCompletionTime(habit.completedAt)}
@@ -125,7 +128,7 @@ function HabitItem({
         <View className="w-6 h-6 rounded-full border-2 border-primary mr-4" />
         <View className="flex-1">
           <Text className="text-lg font-bold text-foreground">{habit.name}</Text>
-          <Text className="text-xs text-muted-foreground mt-0.5">Current Task</Text>
+          <Text className="text-xs text-muted-foreground mt-0.5">Current Task · {habit.duration ?? 10} min</Text>
         </View>
         <View
           className="w-9 h-9 rounded-full items-center justify-center"
@@ -143,9 +146,12 @@ function HabitItem({
       className="flex-row items-center p-4 bg-card border border-border rounded-2xl mb-3"
     >
       <View className="w-6 h-6 rounded-full border-2 border-border mr-4" />
-      <Text className="text-base font-medium text-muted-foreground flex-1">
-        {habit.name}
-      </Text>
+      <View className="flex-1">
+        <Text className="text-base font-medium text-muted-foreground">
+          {habit.name}
+        </Text>
+        <Text className="text-xs text-muted-foreground mt-0.5">{habit.duration ?? 10} min</Text>
+      </View>
       <View
         className="w-8 h-8 rounded-full items-center justify-center"
         style={{ backgroundColor: style.bg }}
@@ -204,10 +210,18 @@ export default function DashboardScreen() {
       if (state === 'active') {
         checkNewDay();
         setNow(new Date());
+        // Re-evaluate smart default so the toggle switches after overnight backgrounding
+        const completion = getTodayCompletion();
+        setRoutineType(getActiveRoutineType(
+          morningRoutine.targetTime,
+          nightRoutine.targetTime,
+          completion.morning,
+          completion.night,
+        ));
       }
     });
     return () => sub.remove();
-  }, [checkNewDay]);
+  }, [checkNewDay, morningRoutine.targetTime, nightRoutine.targetTime]);
 
   // Poll alarm state so the stop button appears/disappears
   useEffect(() => {
@@ -242,8 +256,8 @@ export default function DashboardScreen() {
     ? todayCompletion.morningCompletedAt
     : todayCompletion.nightCompletedAt;
 
-  // Smart status: overdue / starts in / complete (recomputes on every render including refresh)
-  const routineStatus = getRoutineStatus(routine.targetTime, isComplete, routineCompletedAt);
+  // Smart status: overdue / starts in / complete (tied to `now` state so refresh always updates)
+  const routineStatus = getRoutineStatus(routine.targetTime, isComplete, now, routineCompletedAt);
 
   // Check if the OTHER routine is complete today
   const otherRoutineComplete = routineType === 'morning'
